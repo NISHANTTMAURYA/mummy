@@ -160,15 +160,14 @@ class EditPage(ctk.CTkFrame):
             variable=self.file_var, 
             values=self.get_file_list(), 
             command=self.on_file_change, 
-            width=220,
-            height=48,
-            font=ctk.CTkFont(size=16, family="Arial"),
+            width=400,
+            height=40,
+            font=ctk.CTkFont(size=14, family="Arial"),
             fg_color=self.colors["dropdown_bg"],
             button_color=self.colors["accent"],
             button_hover_color=self.colors["accent_hover"],
             dropdown_fg_color=self.colors["dropdown_bg"],
             dropdown_hover_color=self.colors["dropdown_hover"],
-            dropdown_font=ctk.CTkFont(size=18, family="Arial"),
             corner_radius=10,
             text_color="#ffffff"  # Always white for better visibility
         )
@@ -192,15 +191,14 @@ class EditPage(ctk.CTkFrame):
             variable=self.month_var, 
             values=[], 
             command=self.on_month_change, 
-            width=220,
-            height=48,
-            font=ctk.CTkFont(size=16, family="Arial"),
+            width=200,
+            height=40,
+            font=ctk.CTkFont(size=14, family="Arial"),
             fg_color=self.colors["dropdown_bg"],
             button_color=self.colors["accent"],
             button_hover_color=self.colors["accent_hover"],
             dropdown_fg_color=self.colors["dropdown_bg"],
             dropdown_hover_color=self.colors["dropdown_hover"],
-            dropdown_font=ctk.CTkFont(size=18, family="Arial"),
             corner_radius=10,
             text_color="#ffffff"  # Always white for better visibility
         )
@@ -985,15 +983,15 @@ class CopyPage(ctk.CTkFrame):
         self.term_dropdown = ctk.CTkOptionMenu(term_frame,
                                              values=["term1", "term2"],
                                              variable=self.term_var,
-                                             width=220,
-                                             height=48,
-                                             font=ctk.CTkFont(size=16, family="Arial"),
+                                             width=150,
+                                             height=40,
+                                             font=ctk.CTkFont(size=14, family="Arial"),
                                              fg_color=self.colors["dropdown_bg"],
                                              button_color=self.colors["accent"],
                                              button_hover_color=self.colors["accent_hover"],
                                              dropdown_fg_color=self.colors["dropdown_bg"],
                                              dropdown_hover_color=self.colors["dropdown_hover"],
-                                             dropdown_font=ctk.CTkFont(size=16, family="Arial"),
+                                             dropdown_font=ctk.CTkFont(size=14, family="Arial"),
                                              corner_radius=10,
                                              text_color="#ffffff")  # Always white for better visibility
         self.term_dropdown.grid(row=0, column=1, sticky="w", padx=(10, 0))
@@ -1011,15 +1009,15 @@ class CopyPage(ctk.CTkFrame):
         self.std_dropdown = ctk.CTkOptionMenu(std_frame,
                                              values=["FYJC", "SYJC"],
                                              variable=self.std_var,
-                                             width=220,
-                                             height=48,
-                                             font=ctk.CTkFont(size=16, family="Arial"),
+                                             width=150,
+                                             height=40,
+                                             font=ctk.CTkFont(size=14, family="Arial"),
                                              fg_color=self.colors["dropdown_bg"],
                                              button_color=self.colors["accent"],
                                              button_hover_color=self.colors["accent_hover"],
                                              dropdown_fg_color=self.colors["dropdown_bg"],
                                              dropdown_hover_color=self.colors["dropdown_hover"],
-                                             dropdown_font=ctk.CTkFont(size=16, family="Arial"),
+                                             dropdown_font=ctk.CTkFont(size=14, family="Arial"),
                                              corner_radius=10,
                                              text_color="#ffffff")  # Always white for better visibility
         self.std_dropdown.grid(row=0, column=1, sticky="w", padx=(10, 0))
@@ -1046,8 +1044,8 @@ class CopyPage(ctk.CTkFrame):
 
         # --- Bottom: Available Copies List ---
         list_frame = ctk.CTkFrame(self, fg_color=self.colors["card_bg"], corner_radius=20)
-        # Remove fixed bottom padding so the card can expand fully
-        list_frame.grid(row=1, column=0, sticky="nsew", padx=40, pady=0)
+        # Make the card/box visually bigger by increasing pady and height
+        list_frame.grid(row=1, column=0, sticky="nsew", padx=40, pady=(10, 60))  # Increased bottom padding
         # Make list_frame expand fully
         list_frame.grid_columnconfigure(0, weight=1)
         list_frame.grid_rowconfigure(2, weight=1)  # Row with files should expand
@@ -1083,9 +1081,9 @@ class CopyPage(ctk.CTkFrame):
         self.year_filter = ctk.CTkOptionMenu(filter_frame,
                                            values=["All Years"],
                                            variable=self.year_filter_var,
-                                           width=160,
-                                           height=44,
-                                           font=ctk.CTkFont(size=15),
+                                           width=100,  # Reduced width
+                                           height=30,
+                                           font=ctk.CTkFont(size=12),
                                            fg_color=self.colors["dropdown_bg"],
                                            button_color=self.colors["accent"],
                                            button_hover_color=self.colors["accent_hover"],
@@ -1100,9 +1098,9 @@ class CopyPage(ctk.CTkFrame):
         self.term_filter = ctk.CTkOptionMenu(filter_frame,
                                            values=["All Terms", "term1", "term2"],
                                            variable=self.term_filter_var,
-                                           width=160,
-                                           height=44,
-                                           font=ctk.CTkFont(size=15),
+                                           width=100,  # Reduced width
+                                           height=30,
+                                           font=ctk.CTkFont(size=12),
                                            fg_color=self.colors["dropdown_bg"],
                                            button_color=self.colors["accent"],
                                            button_hover_color=self.colors["accent_hover"],
@@ -1117,9 +1115,9 @@ class CopyPage(ctk.CTkFrame):
         self.std_filter = ctk.CTkOptionMenu(filter_frame,
                                            values=["All Standards", "FYJC", "SYJC"],
                                            variable=self.std_filter_var,
-                                           width=160,
-                                           height=44,
-                                           font=ctk.CTkFont(size=15),
+                                           width=100,  # Reduced width
+                                           height=30,
+                                           font=ctk.CTkFont(size=12),
                                            fg_color=self.colors["dropdown_bg"],
                                            button_color=self.colors["accent"],
                                            button_hover_color=self.colors["accent_hover"],
@@ -1144,8 +1142,8 @@ class CopyPage(ctk.CTkFrame):
         # Create a container for the scrollable frame with proper border
         scroll_container = ctk.CTkFrame(list_frame, fg_color="transparent", border_width=2, 
                                       border_color=self.colors["border"], corner_radius=15)
-        # Remove fixed bottom padding so the scrollable area can expand fully
-        scroll_container.grid(row=2, column=0, sticky="nsew", padx=20, pady=0)
+        # Make the scrollable area bigger by increasing pady and height
+        scroll_container.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 30))  # Increased bottom padding
         # Make scroll_container expand fully
         scroll_container.grid_columnconfigure(0, weight=1)
         scroll_container.grid_rowconfigure(0, weight=1)

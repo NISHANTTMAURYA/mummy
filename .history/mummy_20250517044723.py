@@ -168,7 +168,6 @@ class EditPage(ctk.CTkFrame):
             button_hover_color=self.colors["accent_hover"],
             dropdown_fg_color=self.colors["dropdown_bg"],
             dropdown_hover_color=self.colors["dropdown_hover"],
-            dropdown_font=ctk.CTkFont(size=18, family="Arial"),
             corner_radius=10,
             text_color="#ffffff"  # Always white for better visibility
         )
@@ -200,7 +199,6 @@ class EditPage(ctk.CTkFrame):
             button_hover_color=self.colors["accent_hover"],
             dropdown_fg_color=self.colors["dropdown_bg"],
             dropdown_hover_color=self.colors["dropdown_hover"],
-            dropdown_font=ctk.CTkFont(size=18, family="Arial"),
             corner_radius=10,
             text_color="#ffffff"  # Always white for better visibility
         )
