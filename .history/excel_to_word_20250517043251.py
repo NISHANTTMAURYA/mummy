@@ -340,68 +340,28 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
                 last_row.cells[col_map['{{col_srno}}']].text = 'TOTAL'
             if col_map.get('{{col_initials}}') is not None:
                 last_row.cells[col_map['{{col_initials}}']].text = ''
-            # Fill XI and XII columns appropriately for single or dual file
-            if is_single_file:
-                if file_info1['original_std'] == 'FYJC':
-                    # Fill XI columns from total_row1
-                    if total_row1:
-                        allotted_idx1 = field_map1.get('ALLOTTED')
-                        engaged_idx1 = field_map1.get('ENGAGED')
-                        gap_idx1 = field_map1.get('GAP')
-                        if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx1 is not None and len(total_row1) > allotted_idx1:
-                            last_row.cells[col_map['{{col_xi_allotted}}']].text = total_row1[allotted_idx1]
-                        if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx1 is not None and len(total_row1) > engaged_idx1:
-                            last_row.cells[col_map['{{col_xi_engaged}}']].text = total_row1[engaged_idx1]
-                        if col_map.get('{{col_xi_gap}}') is not None and gap_idx1 is not None and len(total_row1) > gap_idx1:
-                            last_row.cells[col_map['{{col_xi_gap}}']].text = total_row1[gap_idx1]
-                    # Set XII columns to '--'
-                    if col_map.get('{{col_xii_allotted}}') is not None:
-                        last_row.cells[col_map['{{col_xii_allotted}}']].text = '--'
-                    if col_map.get('{{col_xii_engaged}}') is not None:
-                        last_row.cells[col_map['{{col_xii_engaged}}']].text = '--'
-                    if col_map.get('{{col_xii_gap}}') is not None:
-                        last_row.cells[col_map['{{col_xii_gap}}']].text = '--'
-                else:  # SYJC
-                    # Fill XII columns from total_row1
-                    if total_row1:
-                        allotted_idx1 = field_map1.get('ALLOTTED')
-                        engaged_idx1 = field_map1.get('ENGAGED')
-                        gap_idx1 = field_map1.get('GAP')
-                        if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx1 is not None and len(total_row1) > allotted_idx1:
-                            last_row.cells[col_map['{{col_xii_allotted}}']].text = total_row1[allotted_idx1]
-                        if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx1 is not None and len(total_row1) > engaged_idx1:
-                            last_row.cells[col_map['{{col_xii_engaged}}']].text = total_row1[engaged_idx1]
-                        if col_map.get('{{col_xii_gap}}') is not None and gap_idx1 is not None and len(total_row1) > gap_idx1:
-                            last_row.cells[col_map['{{col_xii_gap}}']].text = total_row1[gap_idx1]
-                    # Set XI columns to '--'
-                    if col_map.get('{{col_xi_allotted}}') is not None:
-                        last_row.cells[col_map['{{col_xi_allotted}}']].text = '--'
-                    if col_map.get('{{col_xi_engaged}}') is not None:
-                        last_row.cells[col_map['{{col_xi_engaged}}']].text = '--'
-                    if col_map.get('{{col_xi_gap}}') is not None:
-                        last_row.cells[col_map['{{col_xi_gap}}']].text = '--'
-            else:
-                # Dual file logic (unchanged)
-                if total_row1:
-                    allotted_idx1 = field_map1.get('ALLOTTED')
-                    engaged_idx1 = field_map1.get('ENGAGED')
-                    gap_idx1 = field_map1.get('GAP')
-                    if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx1 is not None and len(total_row1) > allotted_idx1:
-                        last_row.cells[col_map['{{col_xi_allotted}}']].text = total_row1[allotted_idx1]
-                    if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx1 is not None and len(total_row1) > engaged_idx1:
-                        last_row.cells[col_map['{{col_xi_engaged}}']].text = total_row1[engaged_idx1]
-                    if col_map.get('{{col_xi_gap}}') is not None and gap_idx1 is not None and len(total_row1) > gap_idx1:
-                        last_row.cells[col_map['{{col_xi_gap}}']].text = total_row1[gap_idx1]
-                if total_row2:
-                    allotted_idx2 = field_map2.get('ALLOTTED')
-                    engaged_idx2 = field_map2.get('ENGAGED')
-                    gap_idx2 = field_map2.get('GAP')
-                    if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx2 is not None and len(total_row2) > allotted_idx2:
-                        last_row.cells[col_map['{{col_xii_allotted}}']].text = total_row2[allotted_idx2]
-                    if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx2 is not None and len(total_row2) > engaged_idx2:
-                        last_row.cells[col_map['{{col_xii_engaged}}']].text = total_row2[engaged_idx2]
-                    if col_map.get('{{col_xii_gap}}') is not None and gap_idx2 is not None and len(total_row2) > gap_idx2:
-                        last_row.cells[col_map['{{col_xii_gap}}']].text = total_row2[gap_idx2]
+            # Fill XI columns
+            if total_row1:
+                allotted_idx1 = field_map1.get('ALLOTTED')
+                engaged_idx1 = field_map1.get('ENGAGED')
+                gap_idx1 = field_map1.get('GAP')
+                if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx1 is not None and len(total_row1) > allotted_idx1:
+                    last_row.cells[col_map['{{col_xi_allotted}}']].text = total_row1[allotted_idx1]
+                if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx1 is not None and len(total_row1) > engaged_idx1:
+                    last_row.cells[col_map['{{col_xi_engaged}}']].text = total_row1[engaged_idx1]
+                if col_map.get('{{col_xi_gap}}') is not None and gap_idx1 is not None and len(total_row1) > gap_idx1:
+                    last_row.cells[col_map['{{col_xi_gap}}']].text = total_row1[gap_idx1]
+            # Fill XII columns
+            if total_row2:
+                allotted_idx2 = field_map2.get('ALLOTTED')
+                engaged_idx2 = field_map2.get('ENGAGED')
+                gap_idx2 = field_map2.get('GAP')
+                if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx2 is not None and len(total_row2) > allotted_idx2:
+                    last_row.cells[col_map['{{col_xii_allotted}}']].text = total_row2[allotted_idx2]
+                if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx2 is not None and len(total_row2) > engaged_idx2:
+                    last_row.cells[col_map['{{col_xii_engaged}}']].text = total_row2[engaged_idx2]
+                if col_map.get('{{col_xii_gap}}') is not None and gap_idx2 is not None and len(total_row2) > gap_idx2:
+                    last_row.cells[col_map['{{col_xii_gap}}']].text = total_row2[gap_idx2]
         # --- END NEW ---
         doc.save(output_path)
         logger.info(f"Processed {month_name} and saved to {output_path}")
@@ -858,8 +818,8 @@ def process_dual_excel_files(excel_path1, excel_path2, template_path="executive_
 # Example usage for testing
 if __name__ == "__main__":
     # Test paths - replace these with your actual file paths
-    excel_path1 = "excel_copies/iso_excel_2023-2024_term1_FYJC.xlsx"
-    excel_path2 = "excel_copies/iso_excel_2023-2024_term1_SYJC.xlsx"  # Empty path for single file processing
+    excel_path1 = "excel_copies/iso_excel_2023-2024_term2_FYJC.xlsx"
+    excel_path2 = " "  # Empty path for single file processing
     
     logger.info("Starting Excel to Word conversion")
     
