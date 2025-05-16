@@ -331,12 +331,21 @@ class EditPage(ctk.CTkFrame):
         import openpyxl
         self.current_file = os.path.join("excel_copies", filename)
         
-        # Extract standard from filename if present
+        # Extract standard and year from filename if present
         self.current_std = "Unknown"
-        if "_FYJC.xlsx" in filename:
-            self.current_std = "FYJC (11th)"
-        elif "_SYJC.xlsx" in filename:
-            self.current_std = "SYJC (12th)"
+        self.current_year = "Unknown"
+        
+        # Parse filename to extract information (iso_excel_YEAR_term_STD.xlsx)
+        parts = filename.replace(".xlsx", "").split("_")
+        if len(parts) >= 5:  # Has all components
+            # Format is typically: iso_excel_2024-2025_term1_FYJC.xlsx
+            if parts[2].count("-") == 1:  # Year range format 2024-2025
+                self.current_year = parts[2]
+            
+            if "FYJC" in parts:
+                self.current_std = "FYJC"
+            elif "SYJC" in parts:
+                self.current_std = "SYJC"
         
         try:
             # When parsing the file structure, use normal mode to get formulas
@@ -503,42 +512,9 @@ class EditPage(ctk.CTkFrame):
                 ctk.CTkLabel(self.data_frame, text="No data to display for this selection.", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10)
                 return
 
-            # Add header info above the table
-            header_frame = ctk.CTkFrame(self.data_frame, fg_color=self.colors["card_bg"], corner_radius=10)
-            header_frame.grid(row=0, column=0, sticky="new", padx=20, pady=(10, 20), ipady=10)
-            header_frame.grid_columnconfigure(0, weight=1)
-            
-            # Add file info (year, term, standard)
-            info_text = f"🗓️ {self.current_month} Data"
-            
-            # Extract year from filename if possible
-            year_text = ""
-            if self.current_file:
-                filename = os.path.basename(self.current_file)
-                if "_202" in filename:  # Look for year pattern
-                    year_part = filename.split("_")[2]  # Assuming format iso_excel_YYYY-YYYY_...
-                    if year_part and "-" in year_part:
-                        year_text = f" • {year_part}"
-            
-            # Add standard info if available
-            std_text = ""
-            if hasattr(self, 'current_std') and self.current_std != "Unknown":
-                std_name = "11th Standard" if "FYJC" in self.current_std else "12th Standard"
-                std_text = f" • {std_name}"
-            
-            # Combine all info in a single clean label
-            full_info = info_text + year_text + std_text
-            
-            ctk.CTkLabel(
-                header_frame,
-                text=full_info,
-                font=ctk.CTkFont(size=22, weight="bold"),
-                text_color=self.colors["accent"]
-            ).grid(row=0, column=0, padx=15, pady=5)
-
             # Create a custom frame for the table with border
             table_container = ctk.CTkFrame(self.data_frame, fg_color="transparent")
-            table_container.grid(row=1, column=0, sticky="nsew", padx=20, pady=0)
+            table_container.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
             table_container.grid_columnconfigure(0, weight=1)
             table_container.grid_rowconfigure(0, weight=1)
             
@@ -625,9 +601,36 @@ class EditPage(ctk.CTkFrame):
             self.tree.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
             scrollbar.grid(row=0, column=1, sticky="ns", pady=5)
             
-            # Configure grid for proper layout
+            # Add a title frame for the table with standard information
+            title_frame = ctk.CTkFrame(self.data_frame, fg_color="transparent")
+            title_frame.grid(row=0, column=0, sticky="n", pady=(0, 0))
+            
+            # Add month title
+            month_title = ctk.CTkLabel(
+                title_frame, 
+                text=f"🗓️ {self.current_month} Data", 
+                font=ctk.CTkFont(size=24, weight="bold"),
+                text_color=self.colors["accent"]
+            )
+            month_title.pack(pady=(0, 5))
+            
+            # Add standard info if available
+            if hasattr(self, 'current_std') and self.current_std != "Unknown":
+                std_badge_bg = "#E6E6FA" if "FYJC" in self.current_std else "#FFE6E6"
+                std_badge = ctk.CTkLabel(
+                    title_frame,
+                    text=f"🎓 {self.current_std}",
+                    font=ctk.CTkFont(size=14, weight="bold"),
+                    fg_color=std_badge_bg,
+                    corner_radius=8,
+                    text_color="#333333",
+                    padx=10,
+                    pady=3
+                )
+                std_badge.pack(pady=(0, 10))
+            
             self.data_frame.grid_columnconfigure(0, weight=1)
-            self.data_frame.grid_rowconfigure(1, weight=1)  # The row with the table should expand
+            self.data_frame.grid_rowconfigure(0, weight=1)
             
             # Create a custom entry widget for editing cells
             self.edit_entry = None
@@ -638,11 +641,10 @@ class EditPage(ctk.CTkFrame):
             # Store for saving
             self.data_widgets = [(headers, row_indices, header_indices)]
             self.status_label.configure(text="", text_color="green")
-            
         except Exception as e:
             self.status_label.configure(text=f"Error: {e}", text_color="red")
             ctk.CTkLabel(self.data_frame, text=f"Error: {e}", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10)
-
+            
     def _save_single_cell(self, item_id, col_idx, header, value):
         """Save a single cell value directly to Excel without reloading the entire sheet"""
         try:

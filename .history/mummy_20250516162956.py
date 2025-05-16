@@ -330,14 +330,6 @@ class EditPage(ctk.CTkFrame):
     def on_file_change(self, filename):
         import openpyxl
         self.current_file = os.path.join("excel_copies", filename)
-        
-        # Extract standard from filename if present
-        self.current_std = "Unknown"
-        if "_FYJC.xlsx" in filename:
-            self.current_std = "FYJC (11th)"
-        elif "_SYJC.xlsx" in filename:
-            self.current_std = "SYJC (12th)"
-        
         try:
             # When parsing the file structure, use normal mode to get formulas
             wb = openpyxl.load_workbook(self.current_file)
@@ -503,42 +495,9 @@ class EditPage(ctk.CTkFrame):
                 ctk.CTkLabel(self.data_frame, text="No data to display for this selection.", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10)
                 return
 
-            # Add header info above the table
-            header_frame = ctk.CTkFrame(self.data_frame, fg_color=self.colors["card_bg"], corner_radius=10)
-            header_frame.grid(row=0, column=0, sticky="new", padx=20, pady=(10, 20), ipady=10)
-            header_frame.grid_columnconfigure(0, weight=1)
-            
-            # Add file info (year, term, standard)
-            info_text = f"🗓️ {self.current_month} Data"
-            
-            # Extract year from filename if possible
-            year_text = ""
-            if self.current_file:
-                filename = os.path.basename(self.current_file)
-                if "_202" in filename:  # Look for year pattern
-                    year_part = filename.split("_")[2]  # Assuming format iso_excel_YYYY-YYYY_...
-                    if year_part and "-" in year_part:
-                        year_text = f" • {year_part}"
-            
-            # Add standard info if available
-            std_text = ""
-            if hasattr(self, 'current_std') and self.current_std != "Unknown":
-                std_name = "11th Standard" if "FYJC" in self.current_std else "12th Standard"
-                std_text = f" • {std_name}"
-            
-            # Combine all info in a single clean label
-            full_info = info_text + year_text + std_text
-            
-            ctk.CTkLabel(
-                header_frame,
-                text=full_info,
-                font=ctk.CTkFont(size=22, weight="bold"),
-                text_color=self.colors["accent"]
-            ).grid(row=0, column=0, padx=15, pady=5)
-
             # Create a custom frame for the table with border
             table_container = ctk.CTkFrame(self.data_frame, fg_color="transparent")
-            table_container.grid(row=1, column=0, sticky="nsew", padx=20, pady=0)
+            table_container.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
             table_container.grid_columnconfigure(0, weight=1)
             table_container.grid_rowconfigure(0, weight=1)
             
@@ -625,9 +584,17 @@ class EditPage(ctk.CTkFrame):
             self.tree.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
             scrollbar.grid(row=0, column=1, sticky="ns", pady=5)
             
-            # Configure grid for proper layout
+            # Add a title for the table
+            month_title = ctk.CTkLabel(
+                self.data_frame, 
+                text=f"🗓️ {self.current_month} Data", 
+                font=ctk.CTkFont(size=24, weight="bold"),
+                text_color=self.colors["accent"]
+            )
+            month_title.grid(row=0, column=0, sticky="n", pady=(0, 0))
+            
             self.data_frame.grid_columnconfigure(0, weight=1)
-            self.data_frame.grid_rowconfigure(1, weight=1)  # The row with the table should expand
+            self.data_frame.grid_rowconfigure(0, weight=1)
             
             # Create a custom entry widget for editing cells
             self.edit_entry = None
@@ -638,11 +605,10 @@ class EditPage(ctk.CTkFrame):
             # Store for saving
             self.data_widgets = [(headers, row_indices, header_indices)]
             self.status_label.configure(text="", text_color="green")
-            
         except Exception as e:
             self.status_label.configure(text=f"Error: {e}", text_color="red")
             ctk.CTkLabel(self.data_frame, text=f"Error: {e}", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10)
-
+            
     def _save_single_cell(self, item_id, col_idx, header, value):
         """Save a single cell value directly to Excel without reloading the entire sheet"""
         try:
@@ -1136,11 +1102,8 @@ class CopyPage(ctk.CTkFrame):
         # Get selected term - exact sheet name as it appears in Excel
         term = self.term_var.get()  # Now directly "term1" or "term2"
         
-        # Get selected standard
-        std = self.std_var.get()  # "FYJC" or "SYJC"
-        
         os.makedirs("excel_copies", exist_ok=True)
-        new_file = f"excel_copies/iso_excel_{year}_{term}_{std}.xlsx"
+        new_file = f"excel_copies/iso_excel_{year}_{term}.xlsx"
         
         try:
             import openpyxl
@@ -1188,56 +1151,16 @@ class CopyPage(ctk.CTkFrame):
             for merged_cell_range in src_sheet.merged_cells.ranges:
                 dst_sheet.merge_cells(str(merged_cell_range))
             
-            # Add standard information at the bottom of the sheet
-            # First, find the last row with data
-            last_row = dst_sheet.max_row
-            
-            # Add a small gap (1 row)
-            std_row = last_row + 2
-            
-            # Add standard info with proper styling
-            std_info_cell = dst_sheet.cell(row=std_row, column=1)
-            std_info_cell.value = f"Standard: {std} ({self._std_label_map(std)})"
-            
-            # Style the standard information cell
-            std_info_cell.font = openpyxl.styles.Font(name='Arial', size=10, bold=True)
-            std_info_cell.alignment = openpyxl.styles.Alignment(horizontal='left')
-            
-            # Create a border for the standard information
-            thin_border = openpyxl.styles.Border(
-                left=openpyxl.styles.Side(style='thin'),
-                right=openpyxl.styles.Side(style='thin'),
-                top=openpyxl.styles.Side(style='thin'),
-                bottom=openpyxl.styles.Side(style='thin')
-            )
-            std_info_cell.border = thin_border
-            
-            # Add a light fill color
-            if std == "FYJC":
-                # Light purple for FYJC
-                std_info_cell.fill = openpyxl.styles.PatternFill(start_color="E6E6FA", end_color="E6E6FA", fill_type="solid")
-            else:
-                # Light pink for SYJC
-                std_info_cell.fill = openpyxl.styles.PatternFill(start_color="FFE6E6", end_color="FFE6E6", fill_type="solid")
-            
             # Save the workbook
             dst_wb.save(new_file)
             
             # Display success with cute emojis
-            self.status_label.configure(text=f"✅ Copy created for {std}: {new_file}", text_color="green")
+            self.status_label.configure(text=f"✅ Copy created with sheet '{term}': {new_file}", text_color="green")
             self.new_file_path = os.path.abspath(new_file)
             self.refresh_file_list()
             
         except Exception as e:
             self.status_label.configure(text=f"❌ Error: {e}", text_color="red")
-    
-    def _std_label_map(self, std):
-        """Convert standard code to descriptive text"""
-        if std == "FYJC":
-            return "11th Standard"
-        elif std == "SYJC":
-            return "12th Standard"
-        return ""
 
     def refresh_file_list(self):
         """Refresh the list of available Excel files, filtering out system files."""

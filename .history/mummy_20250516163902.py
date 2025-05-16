@@ -625,24 +625,13 @@ class EditPage(ctk.CTkFrame):
             self.tree.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
             scrollbar.grid(row=0, column=1, sticky="ns", pady=5)
             
-            # Configure grid for proper layout
-            self.data_frame.grid_columnconfigure(0, weight=1)
-            self.data_frame.grid_rowconfigure(1, weight=1)  # The row with the table should expand
-            
-            # Create a custom entry widget for editing cells
-            self.edit_entry = None
-            
-            # Bind the double-click event using a dedicated method
-            self.tree.bind("<Double-1>", self.on_double_click)
-            
             # Store for saving
             self.data_widgets = [(headers, row_indices, header_indices)]
             self.status_label.configure(text="", text_color="green")
-            
         except Exception as e:
             self.status_label.configure(text=f"Error: {e}", text_color="red")
             ctk.CTkLabel(self.data_frame, text=f"Error: {e}", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10)
-
+            
     def _save_single_cell(self, item_id, col_idx, header, value):
         """Save a single cell value directly to Excel without reloading the entire sheet"""
         try:
