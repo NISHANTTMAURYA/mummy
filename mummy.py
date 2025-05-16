@@ -100,8 +100,8 @@ class EditPage(ctk.CTkFrame):
         self.month_col_ranges = {}
         self.sub_headers = []
         self.initials = []
-        self._last_edited_item = None
-        self._last_edited_values = None
+        self._last_edited_cell = None
+        self._refresh_pending = False
         self.load_files()
 
     def get_file_list(self):
@@ -394,8 +394,9 @@ class EditPage(ctk.CTkFrame):
             
             print(f"[DEBUG] Excel file saved successfully")
             
-            # Force reload of data to ensure changes are reflected
-            self.after(100, self.refresh_data)
+            # Don't refresh when moving to next cell during rapid edits
+            # We'll set a flag so we know this cell was just edited
+            self._last_edited_cell = (item_id, col_idx)
             
             # Update status
             self.status_label.configure(text="Changes saved!", text_color="green")
@@ -471,8 +472,8 @@ class EditPage(ctk.CTkFrame):
             wb.save(self.current_file)
             print(f"[DEBUG] Excel file saved successfully")
             
-            # Force reload of data to ensure changes are reflected
-            self.after(100, self.refresh_data)
+            # Force reload of data after save all changes
+            self.refresh_data()
             
             self.status_label.configure(text="All changes saved!", text_color="green")
             
@@ -528,7 +529,7 @@ class EditPage(ctk.CTkFrame):
         # Store reference to edit widgets
         self.edit_entry = (edit_frame, entry, item, col_idx, header)
         
-        def save_edit(event=None):
+        def save_edit(event=None, move_to_next=True):
             # Get the new value
             new_value = entry_var.get().strip()
             
@@ -543,16 +544,19 @@ class EditPage(ctk.CTkFrame):
             self.edit_entry = None
             
             # If the value hasn't changed, don't save
-            if old_value == new_value:
-                return
+            save_success = True
+            if old_value != new_value:
+                # Save changes to Excel directly
+                save_success = self._save_single_cell(item, col_idx, header, new_value)
                 
-            # Save changes to Excel directly
-            success = self._save_single_cell(item, col_idx, header, new_value)
+                if save_success:
+                    # Debug
+                    print(f"[DEBUG] Successfully edited {header} value: '{new_value}'")
+                    print(f"[DEBUG] Updated row: {values}")
             
-            if success:
-                # Debug
-                print(f"[DEBUG] Successfully edited {header} value: '{new_value}'")
-                print(f"[DEBUG] Updated row: {values}")
+            # Move to the next cell if requested
+            if move_to_next and event and event.keysym == 'Return' and save_success:
+                self._move_to_next_cell(item, col_idx)
         
         def cancel_edit(event=None):
             edit_frame.destroy()
@@ -561,7 +565,53 @@ class EditPage(ctk.CTkFrame):
         # Bind events
         entry.bind("<Return>", save_edit)
         entry.bind("<Escape>", cancel_edit)
-        entry.bind("<FocusOut>", save_edit)
+        entry.bind("<FocusOut>", lambda e: save_edit(e, move_to_next=False))
+    
+    def _move_to_next_cell(self, current_item, current_col_idx):
+        """Move to the next editable cell after editing"""
+        if not self.tree or not hasattr(self, 'tree'):
+            return
+            
+        if not self.data_widgets:
+            return
+            
+        headers = self.data_widgets[0][0]
+        num_columns = len(headers)
+        
+        # If we're not at the last column, move to the next column in the same row
+        if current_col_idx < num_columns - 1:
+            next_col_idx = current_col_idx + 1
+            # Skip the Initial column (0)
+            if next_col_idx == 0:
+                next_col_idx = 1
+                
+            # Create column identifier
+            next_column = f"#{next_col_idx+1}"  # +1 because treeview columns are 1-indexed
+            
+            # Simulate a double-click on the next cell
+            bbox = self.tree.bbox(current_item, next_column)
+            if bbox:
+                x, y, _, _ = bbox
+                event = type('Event', (), {'x': x+5, 'y': y+5})  # +5 to ensure we're inside the cell
+                self.on_double_click(event)
+        else:
+            # We're at the last column, move to the first column of the next row
+            items = self.tree.get_children()
+            try:
+                current_index = items.index(current_item)
+                if current_index < len(items) - 1:
+                    next_item = items[current_index + 1]
+                    # Move to the first editable column (skip Initial)
+                    next_column = "#2"  # Column index 1 (2nd column) is the first editable one
+                    
+                    # Simulate a double-click on the next cell
+                    bbox = self.tree.bbox(next_item, next_column)
+                    if bbox:
+                        x, y, _, _ = bbox
+                        event = type('Event', (), {'x': x+5, 'y': y+5})  # +5 to ensure we're inside the cell
+                        self.on_double_click(event)
+            except ValueError:
+                pass  # Item not found in the list
 
     def refresh_data(self):
         """Refresh the current data view"""
