@@ -124,38 +124,61 @@ class EditPage(ctk.CTkFrame):
         import openpyxl
         self.current_file = os.path.join("excel_copies", filename)
         try:
+            # When parsing the file structure, use normal mode to get formulas
             wb = openpyxl.load_workbook(self.current_file)
             ws = wb.active
+            
+            # First, find the months and their column ranges by analyzing the first row
             months = []
             month_col_ranges = {}
+            
+            # Get all cells from the first row
+            first_row = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
+            second_row = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
+            
+            # Scan columns to find month headers
             current_month = None
             start_col = None
-            for idx, val in enumerate([cell.value for cell in ws[1]]):
-                if idx < 2:
+            
+            for idx, val in enumerate(first_row):
+                if idx < 2:  # Skip SR.NO. and INITIALS columns
                     continue
-                if val and str(val).strip() and str(val).strip().upper() not in ("SR.NO.", "INITIALS", "TOTAL"):
+                    
+                # If we find a month or TOTAL header
+                if val and isinstance(val, str) and val.strip() and val.strip().upper() not in ("SR.NO.", "INITIALS"):
+                    # If we were tracking a previous month, save its range
                     if current_month:
                         month_col_ranges[current_month] = (start_col, idx-1)
+                    
+                    # Start tracking new month
                     current_month = str(val).strip()
                     start_col = idx
                     months.append(current_month)
+            
+            # Save the last month's range
             if current_month:
-                month_col_ranges[current_month] = (start_col, ws.max_column-1)
+                month_col_ranges[current_month] = (start_col, len(first_row)-1)
+            
+            # Store the column ranges and headers
             self.month_col_ranges = month_col_ranges
-            self.sub_headers = [cell.value for cell in ws[2]]
+            self.sub_headers = second_row  # Second row contains column headers like ALOTTED, E-Act, etc.
+            
             # Get all initials (skip TOTAL/empty)
             initials = []
             for row in ws.iter_rows(min_row=3, max_col=2, values_only=True):
                 if row[1] and str(row[1]).strip() and str(row[1]).strip().upper() != "TOTAL":
                     initials.append(str(row[1]).strip())
+            
             self.initials = initials
             self.month_menu.configure(values=months)
+            
             if months:
                 self.month_var.set(months[0])
                 self.on_month_change(months[0])
             else:
                 self.month_var.set("")
                 self.clear_data_frame()
+                
         except Exception as e:
             self.status_label.configure(text=f"Error loading file: {e}", text_color="red")
             self.month_menu.configure(values=[])
@@ -184,6 +207,7 @@ class EditPage(ctk.CTkFrame):
         self.clear_data_frame()
         if not (self.current_file and self.current_month):
             return
+            
         import openpyxl
         try:
             # Unbind previous resize handlers
@@ -192,47 +216,70 @@ class EditPage(ctk.CTkFrame):
             except:
                 pass
                 
-            wb = openpyxl.load_workbook(self.current_file)
+            # Load workbook with data_only=True to get calculated values instead of formulas
+            wb = openpyxl.load_workbook(self.current_file, data_only=True)
             ws = wb.active
+            
+            # Get the column range for the selected month
             col_range = self.month_col_ranges.get(self.current_month)
             if not col_range:
                 self.status_label.configure(text="Month not found.", text_color="red")
                 ctk.CTkLabel(self.data_frame, text="No data found for selected month.", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10)
                 return
+                
             start_col, end_col = col_range
+            
+            # Define which headers we want to display/edit
             editable_headers = ["ALOTTED", "E-Act", "E-Add"]
             headers = ["Initial"]
             header_indices = []
+            
+            # Find the indices of editable columns within the month's range
             for col in range(start_col, end_col+1):
-                header = self.sub_headers[col]
-                if header in editable_headers:
-                    headers.append(header)
-                    header_indices.append(col)
+                if col < len(self.sub_headers):  # Ensure we don't go out of bounds
+                    header = self.sub_headers[col]
+                    if header in editable_headers:
+                        headers.append(header)
+                        header_indices.append(col)
+            
             # Gather all initials and their values for the selected month
             data = []
             row_indices = []
+            
             for i, row in enumerate(ws.iter_rows(min_row=3, max_col=2, values_only=True), start=3):
                 initial = row[1]
                 if initial and str(initial).strip() and str(initial).strip().upper() != "TOTAL":
                     values = [initial]
+                    
                     for col, h in zip(header_indices, headers[1:]):
-                        cell = ws.cell(row=i, column=col+1)
-                        val = cell.value
-                        if h == "E-Add":
-                            if val == '+' or val == '+ ' or val is None:
+                        # Ensure we don't try to access columns outside worksheet bounds
+                        if col+1 <= ws.max_column:
+                            cell = ws.cell(row=i, column=col+1)
+                            val = cell.value
+                            
+                            if h == "E-Add":
+                                if val == '+' or val == '+ ' or val is None:
+                                    val = ''
+                                elif val is not None:
+                                    # Clean up the value - keep only the number part
+                                    val = str(val).strip().replace('+', '').strip()
+                            elif val is None or str(val).strip().lower() == 'none':
                                 val = ''
-                            elif val is not None:
-                                # Clean up the value - keep only the number part
-                                val = str(val).strip().replace('+', '').strip()
-                        elif val is None or str(val).strip().lower() == 'none':
+                            else:
+                                # Convert to string to display numbers properly
+                                val = str(val)
+                        else:
                             val = ''
+                            
                         values.append(val)
+                    
                     data.append(values)
                     row_indices.append(i)
+                    
             if not headers or not data:
                 ctk.CTkLabel(self.data_frame, text="No data to display for this selection.", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10)
                 return
-                
+
             # Create a custom frame for the table with border
             table_container = ctk.CTkFrame(self.data_frame, fg_color="transparent")
             table_container.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
@@ -308,14 +355,14 @@ class EditPage(ctk.CTkFrame):
             # Add a custom scrollbar with improved styling
             scrollbar_style = ttk.Style()
             scrollbar_style.configure("Custom.Vertical.TScrollbar", 
-                                     background="#3a7ebf", 
-                                     troughcolor="#1e2433",
-                                     bordercolor="#3a7ebf",
-                                     arrowcolor="white")
+                                      background="#3a7ebf", 
+                                      troughcolor="#1e2433",
+                                      bordercolor="#3a7ebf",
+                                      arrowcolor="white")
             
             scrollbar = ttk.Scrollbar(border_frame, orient="vertical", 
-                                     command=self.tree.yview,
-                                     style="Custom.Vertical.TScrollbar")
+                                      command=self.tree.yview,
+                                      style="Custom.Vertical.TScrollbar")
             self.tree.configure(yscrollcommand=scrollbar.set)
             
             # Place the treeview and scrollbar
@@ -365,7 +412,7 @@ class EditPage(ctk.CTkFrame):
             row_idx = row_indices[item_index]
             col = header_indices[col_idx - 1]  # -1 because col_idx includes Initial column
             
-            # Open the workbook
+            # Open the workbook (load with formulas for saving)
             import openpyxl
             wb = openpyxl.load_workbook(self.current_file)
             ws = wb.active
