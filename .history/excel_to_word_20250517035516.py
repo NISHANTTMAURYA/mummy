@@ -776,7 +776,7 @@ def process_dual_excel_files(excel_path1, excel_path2, template_path="executive_
 # Example usage for testing
 if __name__ == "__main__":
     # Test paths - replace these with your actual file paths
-    excel_path1 = "excel_copies/iso_excel_2023-2024_term1_FYJC.xlsx"
+    excel_path1 = " "
     excel_path2 = "excel_copies/iso_excel_2023-2024_term1_SYJC.xlsx"  # Empty path for single file processing
     
     logger.info("Starting Excel to Word conversion")

@@ -207,9 +207,6 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
         else:
             field_map2 = columns2.get(month_name.upper(), columns2)
 
-        # Check if this is a single file process (same file info)
-        is_single_file = file_info1 == file_info2
-
         # Process data from both files
         for data_idx, (data_row1, data_row2) in enumerate(zip(data_rows1, data_rows2)):
             if not data_row1 or len(data_row1) < 2 or not data_row2 or len(data_row2) < 2:
@@ -244,89 +241,37 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
             engaged_idx2 = field_map2.get('ENGAGED')
             gap_idx2 = field_map2.get('GAP')
 
-            # For single file processing, only fill the appropriate columns based on standard
-            if is_single_file:
-                if file_info1['original_std'] == 'FYJC':
-                    # Fill XI columns only
-                    if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx1 is not None and len(data_row1) > allotted_idx1:
-                        row.cells[col_map['{{col_xi_allotted}}']].text = data_row1[allotted_idx1]
-                    else:
-                        row.cells[col_map['{{col_xi_allotted}}']].text = '--'
-
-                    if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx1 is not None and len(data_row1) > engaged_idx1:
-                        row.cells[col_map['{{col_xi_engaged}}']].text = data_row1[engaged_idx1]
-                    else:
-                        row.cells[col_map['{{col_xi_engaged}}']].text = '--'
-
-                    if col_map.get('{{col_xi_gap}}') is not None and gap_idx1 is not None and len(data_row1) > gap_idx1:
-                        row.cells[col_map['{{col_xi_gap}}']].text = data_row1[gap_idx1]
-                    else:
-                        row.cells[col_map['{{col_xi_gap}}']].text = '--'
-
-                    # Clear XII columns
-                    if col_map.get('{{col_xii_allotted}}') is not None:
-                        row.cells[col_map['{{col_xii_allotted}}']].text = '--'
-                    if col_map.get('{{col_xii_engaged}}') is not None:
-                        row.cells[col_map['{{col_xii_engaged}}']].text = '--'
-                    if col_map.get('{{col_xii_gap}}') is not None:
-                        row.cells[col_map['{{col_xii_gap}}']].text = '--'
-                else:  # SYJC
-                    # Fill XII columns only
-                    if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx1 is not None and len(data_row1) > allotted_idx1:
-                        row.cells[col_map['{{col_xii_allotted}}']].text = data_row1[allotted_idx1]
-                    else:
-                        row.cells[col_map['{{col_xii_allotted}}']].text = '--'
-
-                    if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx1 is not None and len(data_row1) > engaged_idx1:
-                        row.cells[col_map['{{col_xii_engaged}}']].text = data_row1[engaged_idx1]
-                    else:
-                        row.cells[col_map['{{col_xii_engaged}}']].text = '--'
-
-                    if col_map.get('{{col_xii_gap}}') is not None and gap_idx1 is not None and len(data_row1) > gap_idx1:
-                        row.cells[col_map['{{col_xii_gap}}']].text = data_row1[gap_idx1]
-                    else:
-                        row.cells[col_map['{{col_xii_gap}}']].text = '--'
-
-                    # Clear XI columns
-                    if col_map.get('{{col_xi_allotted}}') is not None:
-                        row.cells[col_map['{{col_xi_allotted}}']].text = '--'
-                    if col_map.get('{{col_xi_engaged}}') is not None:
-                        row.cells[col_map['{{col_xi_engaged}}']].text = '--'
-                    if col_map.get('{{col_xi_gap}}') is not None:
-                        row.cells[col_map['{{col_xi_gap}}']].text = '--'
+            # Fill XI columns (FYJC data)
+            if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx1 is not None and len(data_row1) > allotted_idx1:
+                row.cells[col_map['{{col_xi_allotted}}']].text = data_row1[allotted_idx1]
             else:
-                # Original dual file processing logic
-                # Fill XI columns (FYJC data)
-                if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx1 is not None and len(data_row1) > allotted_idx1:
-                    row.cells[col_map['{{col_xi_allotted}}']].text = data_row1[allotted_idx1]
-                else:
-                    row.cells[col_map['{{col_xi_allotted}}']].text = '--'
+                row.cells[col_map['{{col_xi_allotted}}']].text = '--'
 
-                if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx1 is not None and len(data_row1) > engaged_idx1:
-                    row.cells[col_map['{{col_xi_engaged}}']].text = data_row1[engaged_idx1]
-                else:
-                    row.cells[col_map['{{col_xi_engaged}}']].text = '--'
+            if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx1 is not None and len(data_row1) > engaged_idx1:
+                row.cells[col_map['{{col_xi_engaged}}']].text = data_row1[engaged_idx1]
+            else:
+                row.cells[col_map['{{col_xi_engaged}}']].text = '--'
 
-                if col_map.get('{{col_xi_gap}}') is not None and gap_idx1 is not None and len(data_row1) > gap_idx1:
-                    row.cells[col_map['{{col_xi_gap}}']].text = data_row1[gap_idx1]
-                else:
-                    row.cells[col_map['{{col_xi_gap}}']].text = '--'
+            if col_map.get('{{col_xi_gap}}') is not None and gap_idx1 is not None and len(data_row1) > gap_idx1:
+                row.cells[col_map['{{col_xi_gap}}']].text = data_row1[gap_idx1]
+            else:
+                row.cells[col_map['{{col_xi_gap}}']].text = '--'
 
-                # Fill XII columns (SYJC data)
-                if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx2 is not None and len(data_row2) > allotted_idx2:
-                    row.cells[col_map['{{col_xii_allotted}}']].text = data_row2[allotted_idx2]
-                else:
-                    row.cells[col_map['{{col_xii_allotted}}']].text = '--'
+            # Fill XII columns (SYJC data)
+            if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx2 is not None and len(data_row2) > allotted_idx2:
+                row.cells[col_map['{{col_xii_allotted}}']].text = data_row2[allotted_idx2]
+            else:
+                row.cells[col_map['{{col_xii_allotted}}']].text = '--'
 
-                if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx2 is not None and len(data_row2) > engaged_idx2:
-                    row.cells[col_map['{{col_xii_engaged}}']].text = data_row2[engaged_idx2]
-                else:
-                    row.cells[col_map['{{col_xii_engaged}}']].text = '--'
+            if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx2 is not None and len(data_row2) > engaged_idx2:
+                row.cells[col_map['{{col_xii_engaged}}']].text = data_row2[engaged_idx2]
+            else:
+                row.cells[col_map['{{col_xii_engaged}}']].text = '--'
 
-                if col_map.get('{{col_xii_gap}}') is not None and gap_idx2 is not None and len(data_row2) > gap_idx2:
-                    row.cells[col_map['{{col_xii_gap}}']].text = data_row2[gap_idx2]
-                else:
-                    row.cells[col_map['{{col_xii_gap}}']].text = '--'
+            if col_map.get('{{col_xii_gap}}') is not None and gap_idx2 is not None and len(data_row2) > gap_idx2:
+                row.cells[col_map['{{col_xii_gap}}']].text = data_row2[gap_idx2]
+            else:
+                row.cells[col_map['{{col_xii_gap}}']].text = '--'
 
         doc.save(output_path)
         logger.info(f"Processed {month_name} and saved to {output_path}")
@@ -777,20 +722,17 @@ def process_dual_excel_files(excel_path1, excel_path2, template_path="executive_
 if __name__ == "__main__":
     # Test paths - replace these with your actual file paths
     excel_path1 = "excel_copies/iso_excel_2023-2024_term1_FYJC.xlsx"
-    excel_path2 = "excel_copies/iso_excel_2023-2024_term1_SYJC.xlsx"  # Empty path for single file processing
+    excel_path2 = " "  # Empty path for single file processing
     
     logger.info("Starting Excel to Word conversion")
     
-    # Check if either file exists and is valid
-    if excel_path1.strip() and excel_path2.strip() and os.path.exists(excel_path1) and os.path.exists(excel_path2):
+    # Check if both files exist and are valid
+    if excel_path2.strip() and os.path.exists(excel_path1) and os.path.exists(excel_path2):
         # Process both files together
         process_dual_excel_files(excel_path1, excel_path2)
-    elif excel_path1.strip() and os.path.exists(excel_path1):
-        # Process first file only
+    elif os.path.exists(excel_path1):
+        # Process single file
         process_single_excel_file(excel_path1)
-    elif excel_path2.strip() and os.path.exists(excel_path2):
-        # Process second file only
-        process_single_excel_file(excel_path2)
     else:
         logger.error("No valid Excel files found to process")
     

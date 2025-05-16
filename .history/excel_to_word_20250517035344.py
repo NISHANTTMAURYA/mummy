@@ -777,20 +777,17 @@ def process_dual_excel_files(excel_path1, excel_path2, template_path="executive_
 if __name__ == "__main__":
     # Test paths - replace these with your actual file paths
     excel_path1 = "excel_copies/iso_excel_2023-2024_term1_FYJC.xlsx"
-    excel_path2 = "excel_copies/iso_excel_2023-2024_term1_SYJC.xlsx"  # Empty path for single file processing
+    excel_path2 = " "  # Empty path for single file processing
     
     logger.info("Starting Excel to Word conversion")
     
-    # Check if either file exists and is valid
-    if excel_path1.strip() and excel_path2.strip() and os.path.exists(excel_path1) and os.path.exists(excel_path2):
+    # Check if both files exist and are valid
+    if excel_path2.strip() and os.path.exists(excel_path1) and os.path.exists(excel_path2):
         # Process both files together
         process_dual_excel_files(excel_path1, excel_path2)
-    elif excel_path1.strip() and os.path.exists(excel_path1):
-        # Process first file only
+    elif os.path.exists(excel_path1):
+        # Process single file
         process_single_excel_file(excel_path1)
-    elif excel_path2.strip() and os.path.exists(excel_path2):
-        # Process second file only
-        process_single_excel_file(excel_path2)
     else:
         logger.error("No valid Excel files found to process")
     
