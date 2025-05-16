@@ -5,19 +5,115 @@ import shutil
 import openpyxl
 import tkinter as tk
 from tkinter import ttk
+from copy import copy
 
 class ExcelPage(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
+        
+        # Set cute color scheme based on appearance mode
+        self.update_colors()
+        
+        # Create a cute container
+        container = ctk.CTkFrame(self, fg_color=self.colors["card_bg"], corner_radius=20)
+        container.grid(row=0, column=0, padx=80, pady=80, sticky="nsew")
+        container.grid_columnconfigure(0, weight=1)
+        container.grid_rowconfigure(3, weight=1)
+        
+        # Add cute title
+        title_frame = ctk.CTkFrame(container, fg_color="transparent")
+        title_frame.grid(row=0, column=0, padx=30, pady=(30, 20), sticky="ew")
+        
+        ctk.CTkLabel(
+            title_frame,
+            text="✨ Excel Viewer ✨",
+            font=ctk.CTkFont(size=32, weight="bold", family="Arial"),
+            text_color="#ffffff"  # Always white for better visibility
+        ).pack()
+        
+        # Add cute subtitle
+        ctk.CTkLabel(
+            container,
+            text="Click the button below to open your Excel file",
+            font=ctk.CTkFont(size=18, family="Arial"),
+            text_color="#ffffff"  # Always white for better visibility
+        ).grid(row=1, column=0, padx=30, pady=(0, 30))
+        
+        # Big cute Excel icon
+        ctk.CTkLabel(
+            container,
+            text="📊",
+            font=ctk.CTkFont(size=80)
+        ).grid(row=2, column=0, pady=20)
+        
+        # Cute button with better styling
         self.open_button = ctk.CTkButton(
-            self,
-            text="Open Excel File",
+            container,
+            text="📂 Open Excel File",
             command=self.open_excel_file,
-            font=ctk.CTkFont(size=16, weight="bold")
+            font=ctk.CTkFont(size=20, weight="bold", family="Arial"),
+            fg_color=self.colors["accent"],
+            hover_color=self.colors["accent_hover"],
+            corner_radius=15,
+            width=250,
+            height=60,
+            text_color="#ffffff"  # Always white for better visibility
         )
-        self.open_button.grid(row=0, column=0, padx=40, pady=40)
+        self.open_button.grid(row=3, column=0, padx=40, pady=40)
+        
+        # Decorative bottom row
+        bottom_frame = ctk.CTkFrame(container, fg_color="transparent")
+        bottom_frame.grid(row=4, column=0, pady=(0, 20))
+        
+        for i, emoji in enumerate(["💕", "📈", "💕"]):
+            ctk.CTkLabel(
+                bottom_frame,
+                text=emoji,
+                font=ctk.CTkFont(size=24)
+            ).grid(row=0, column=i, padx=15)
+
+    def update_colors(self):
+        """Set color scheme based on appearance mode"""
+        if ctk.get_appearance_mode() == "Dark":
+            self.colors = {
+                "bg_primary": "#2d2438",  # Dark purple background
+                "bg_secondary": "#332b40",  # Medium dark purple
+                "card_bg": "#3a2b4a",  # Medium purple for cards
+                "accent": "#b76edc",  # Bright purple accent
+                "accent_hover": "#c78ae8",  # Lighter purple for hover
+                "text_primary": "#e6e6e6",  # Light gray for text
+                "dropdown_bg": "#3a2b4a",  # Medium purple for dropdown
+                "dropdown_hover": "#473960",  # Slightly lighter purple for hover
+                "input_bg": "#3a2b4a",  # Medium purple for input
+                "border": "#b76edc",  # Bright purple for borders
+                "file_bg": "#473960",  # Light purple for file rows
+                "file_hover": "#524372",  # Lighter purple for file row hover
+                "tree_bg": "#251f30",  # Darker purple for tree
+                "tree_even": "#2d2438",  # Dark purple
+                "tree_odd": "#332b40",  # Medium dark purple
+                "tree_header": "#b76edc"  # Bright purple for headers
+            }
+        else:
+            self.colors = {
+                "bg_primary": "#fff5f9",  # Very light pink background
+                "bg_secondary": "#fff0f5",  # Light pink
+                "card_bg": "#ffebf2",  # Lighter pink for cards
+                "accent": "#ffacc7",  # Medium pink accent
+                "accent_hover": "#ff85a1",  # Darker pink for hover
+                "text_primary": "#4a4a4a",  # Dark gray for text
+                "dropdown_bg": "#ffebf2",  # Lighter pink for dropdown
+                "dropdown_hover": "#ffd6e0",  # Medium light pink for hover
+                "input_bg": "#ffebf2",  # Lighter pink for input
+                "border": "#ffacc7",  # Medium pink for borders
+                "file_bg": "#ffd6e0",  # Medium light pink for file rows
+                "file_hover": "#ffc1d5",  # Slightly darker pink for file row hover
+                "tree_bg": "#fff5f9",  # Very light pink for tree
+                "tree_even": "#fff0f5",  # Light pink
+                "tree_odd": "#ffebf2",  # Lighter pink
+                "tree_header": "#ffacc7"  # Medium pink for headers
+            }
 
     def open_excel_file(self):
         excel_path = os.path.abspath("iso_excel.xlsx")
@@ -29,71 +125,132 @@ class EditPage(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(4, weight=1)
         
-        # Header frame with improved styling
-        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        # Set cute color scheme based on appearance mode
+        self.update_colors()
+        
+        # Header frame with cute styling
+        header_frame = ctk.CTkFrame(self, fg_color=self.colors["card_bg"], corner_radius=15)
         header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", padx=40, pady=(30, 20))
         header_frame.grid_columnconfigure(1, weight=1)
         
-        # File selection with improved styling
-        ctk.CTkLabel(header_frame, text="Select Excel File:", 
-                    font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, sticky="w", pady=(0, 10))
+        # Title with cute emoji
+        title_label = ctk.CTkLabel(
+            header_frame, 
+            text="📝 Edit Excel Data", 
+            font=ctk.CTkFont(size=22, weight="bold", family="Arial"),
+            text_color="#ffffff"  # Always white for better visibility
+        )
+        title_label.grid(row=0, column=0, columnspan=2, sticky="w", padx=20, pady=(15, 20))
+        
+        # File selection with cute styling
+        file_select_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
+        file_select_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=20, pady=(0, 10))
+        file_select_frame.grid_columnconfigure(1, weight=1)
+        
+        ctk.CTkLabel(
+            file_select_frame, 
+            text="🗂️ Select Excel File:", 
+            font=ctk.CTkFont(size=16, weight="bold", family="Arial"),
+            text_color="#ffffff"  # Always white for better visibility
+        ).grid(row=0, column=0, sticky="w", pady=(0, 10))
+        
         self.file_var = ctk.StringVar()
-        self.file_menu = ctk.CTkOptionMenu(header_frame, variable=self.file_var, 
-                                          values=self.get_file_list(), 
-                                          command=self.on_file_change, 
-                                          width=400,
-                                          height=40,
-                                          font=ctk.CTkFont(size=14))
+        self.file_menu = ctk.CTkOptionMenu(
+            file_select_frame, 
+            variable=self.file_var, 
+            values=self.get_file_list(), 
+            command=self.on_file_change, 
+            width=400,
+            height=40,
+            font=ctk.CTkFont(size=14, family="Arial"),
+            fg_color=self.colors["dropdown_bg"],
+            button_color=self.colors["accent"],
+            button_hover_color=self.colors["accent_hover"],
+            dropdown_fg_color=self.colors["dropdown_bg"],
+            dropdown_hover_color=self.colors["dropdown_hover"],
+            corner_radius=10,
+            text_color="#ffffff"  # Always white for better visibility
+        )
         self.file_menu.grid(row=0, column=1, sticky="w", padx=(20, 0), pady=(0, 10))
         
-        # Month selection with improved styling
-        ctk.CTkLabel(header_frame, text="Select Month:", 
-                    font=ctk.CTkFont(size=16, weight="bold")).grid(row=1, column=0, sticky="w", pady=(10, 0))
+        # Month selection with cute styling
+        month_select_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
+        month_select_frame.grid(row=2, column=0, columnspan=2, sticky="ew", padx=20, pady=(10, 20))
+        month_select_frame.grid_columnconfigure(1, weight=1)
+        
+        ctk.CTkLabel(
+            month_select_frame, 
+            text="📅 Select Month:", 
+            font=ctk.CTkFont(size=16, weight="bold", family="Arial"),
+            text_color="#ffffff"  # Always white for better visibility
+        ).grid(row=0, column=0, sticky="w")
+        
         self.month_var = ctk.StringVar()
-        self.month_menu = ctk.CTkOptionMenu(header_frame, variable=self.month_var, 
-                                           values=[], 
-                                           command=self.on_month_change, 
-                                           width=200,
-                                           height=40,
-                                           font=ctk.CTkFont(size=14))
-        self.month_menu.grid(row=1, column=1, sticky="w", padx=(20, 0), pady=(10, 0))
+        self.month_menu = ctk.CTkOptionMenu(
+            month_select_frame, 
+            variable=self.month_var, 
+            values=[], 
+            command=self.on_month_change, 
+            width=200,
+            height=40,
+            font=ctk.CTkFont(size=14, family="Arial"),
+            fg_color=self.colors["dropdown_bg"],
+            button_color=self.colors["accent"],
+            button_hover_color=self.colors["accent_hover"],
+            dropdown_fg_color=self.colors["dropdown_bg"],
+            dropdown_hover_color=self.colors["dropdown_hover"],
+            corner_radius=10,
+            text_color="#ffffff"  # Always white for better visibility
+        )
+        self.month_menu.grid(row=0, column=1, sticky="w", padx=(20, 0))
         
-        # Refresh button
-        self.refresh_button = ctk.CTkButton(header_frame,
-                                           text="Refresh",
-                                           command=self.refresh_data,
-                                           font=ctk.CTkFont(size=14, weight="bold"),
-                                           width=100,
-                                           height=40,
-                                           fg_color="#1f538d",
-                                           hover_color="#3a7ebf")
-        self.refresh_button.grid(row=1, column=1, sticky="e", padx=(0, 20), pady=(10, 0))
+        # Refresh button with cute styling
+        self.refresh_button = ctk.CTkButton(
+            month_select_frame,
+            text="🔄 Refresh",
+            command=self.refresh_data,
+            font=ctk.CTkFont(size=14, weight="bold", family="Arial"),
+            width=120,
+            height=40,
+            fg_color=self.colors["accent"],
+            hover_color=self.colors["accent_hover"],
+            corner_radius=10,
+            text_color="#ffffff"  # Always white for better visibility
+        )
+        self.refresh_button.grid(row=0, column=1, sticky="e", padx=(0, 10))
         
-        # Data frame for the table with improved styling
-        self.data_frame = ctk.CTkFrame(self, fg_color="transparent")
+        # Data frame for the table with cute styling
+        self.data_frame = ctk.CTkFrame(self, fg_color=self.colors["bg_secondary"], corner_radius=15)
         self.data_frame.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=40, pady=20)
         self.data_widgets = []
         
-        # Save button with improved styling
-        button_frame = ctk.CTkFrame(self, fg_color="transparent")
+        # Save button with cute styling
+        button_frame = ctk.CTkFrame(self, fg_color=self.colors["card_bg"], corner_radius=15)
         button_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=40, pady=(10, 20))
         button_frame.grid_columnconfigure(0, weight=1)
         
-        self.save_button = ctk.CTkButton(button_frame, 
-                                        text="Save Changes", 
-                                        command=self.save_changes, 
-                                        font=ctk.CTkFont(size=16, weight="bold"),
-                                        height=50,
-                                        width=200,
-                                        fg_color="#1f538d",
-                                        hover_color="#3a7ebf")
-        self.save_button.grid(row=0, column=0, pady=10)
+        self.save_button = ctk.CTkButton(
+            button_frame, 
+            text="💾 Save Changes", 
+            command=self.save_changes, 
+            font=ctk.CTkFont(size=18, weight="bold", family="Arial"),
+            height=50,
+            width=220,
+            fg_color=self.colors["accent"],
+            hover_color=self.colors["accent_hover"],
+            corner_radius=15,
+            text_color="#ffffff"  # Always white for better visibility
+        )
+        self.save_button.grid(row=0, column=0, pady=15)
         
-        # Status label with improved styling
-        self.status_label = ctk.CTkLabel(button_frame, 
-                                        text="", 
-                                        font=ctk.CTkFont(size=14))
-        self.status_label.grid(row=1, column=0, pady=(5, 10))
+        # Status label with cute styling
+        self.status_label = ctk.CTkLabel(
+            button_frame, 
+            text="", 
+            font=ctk.CTkFont(size=14, family="Arial"),
+            text_color="#ffffff"  # Will be set when displaying messages
+        )
+        self.status_label.grid(row=1, column=0, pady=(5, 15))
         
         self.current_file = None
         self.current_month = None
@@ -104,10 +261,60 @@ class EditPage(ctk.CTkFrame):
         self._refresh_pending = False
         self.load_files()
 
+    def update_colors(self):
+        """Set color scheme based on appearance mode"""
+        if ctk.get_appearance_mode() == "Dark":
+            self.colors = {
+                "bg_primary": "#2d2438",  # Dark purple background
+                "bg_secondary": "#332b40",  # Medium dark purple
+                "card_bg": "#3a2b4a",  # Medium purple for cards
+                "accent": "#b76edc",  # Bright purple accent
+                "accent_hover": "#c78ae8",  # Lighter purple for hover
+                "text_primary": "#e6e6e6",  # Light gray for text
+                "dropdown_bg": "#3a2b4a",  # Medium purple for dropdown
+                "dropdown_hover": "#473960",  # Slightly lighter purple for hover
+                "input_bg": "#3a2b4a",  # Medium purple for input
+                "border": "#b76edc",  # Bright purple for borders
+                "file_bg": "#473960",  # Light purple for file rows
+                "file_hover": "#524372",  # Lighter purple for file row hover
+                "tree_bg": "#251f30",  # Darker purple for tree
+                "tree_even": "#2d2438",  # Dark purple
+                "tree_odd": "#332b40",  # Medium dark purple
+                "tree_header": "#b76edc"  # Bright purple for headers
+            }
+        else:
+            self.colors = {
+                "bg_primary": "#fff5f9",  # Very light pink background
+                "bg_secondary": "#fff0f5",  # Light pink
+                "card_bg": "#ffebf2",  # Lighter pink for cards
+                "accent": "#ffacc7",  # Medium pink accent
+                "accent_hover": "#ff85a1",  # Darker pink for hover
+                "text_primary": "#4a4a4a",  # Dark gray for text
+                "dropdown_bg": "#ffebf2",  # Lighter pink for dropdown
+                "dropdown_hover": "#ffd6e0",  # Medium light pink for hover
+                "input_bg": "#ffebf2",  # Lighter pink for input
+                "border": "#ffacc7",  # Medium pink for borders
+                "file_bg": "#ffd6e0",  # Medium light pink for file rows
+                "file_hover": "#ffc1d5",  # Slightly darker pink for file row hover
+                "tree_bg": "#fff5f9",  # Very light pink for tree
+                "tree_even": "#fff0f5",  # Light pink
+                "tree_odd": "#ffebf2",  # Lighter pink
+                "tree_header": "#ffacc7"  # Medium pink for headers
+            }
+
     def get_file_list(self):
+        """Get a filtered list of Excel files for the file selection dropdown."""
         if not os.path.exists("excel_copies"):
             return []
-        return [f for f in os.listdir("excel_copies") if f.endswith(".xlsx")]
+            
+        # Get only valid Excel files, filtering out system files and temp files
+        all_files = os.listdir("excel_copies")
+        return [f for f in all_files if (
+            f.endswith(".xlsx") and  # Only Excel files
+            not f.startswith("~") and  # Not temp files
+            not f.startswith("$") and  # Not system files
+            not f.startswith(".")  # Not hidden files
+        )]
 
     def load_files(self):
         files = self.get_file_list()
@@ -210,6 +417,9 @@ class EditPage(ctk.CTkFrame):
             
         import openpyxl
         try:
+            # Update colors in case appearance mode changed
+            self.update_colors()
+            
             # Unbind previous resize handlers
             try:
                 self.winfo_toplevel().unbind("<Configure>")
@@ -286,48 +496,48 @@ class EditPage(ctk.CTkFrame):
             table_container.grid_columnconfigure(0, weight=1)
             table_container.grid_rowconfigure(0, weight=1)
             
-            # Add a border frame around the table with improved styling
-            border_frame = ctk.CTkFrame(table_container, fg_color="#1e2433", border_width=3, border_color="#3a7ebf", corner_radius=10)
+            # Add a border frame around the table with cute styling
+            border_frame = ctk.CTkFrame(table_container, fg_color=self.colors["tree_bg"], border_width=3, border_color=self.colors["border"], corner_radius=15)
             border_frame.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
             border_frame.grid_columnconfigure(0, weight=1)
             border_frame.grid_rowconfigure(0, weight=1)
             
-            # Configure style for the treeview with visible grid lines
+            # Configure style for the treeview with cute styling
             style = ttk.Style()
             style.theme_use("clam")  # Use clam theme which supports more customization
             
             # Configure the Treeview colors and font
-            style.configure("Custom.Treeview", 
-                background="#2d3748",  # Darker blue-gray background
-                foreground="#e2e8f0",  # Light gray text for better contrast
+            style.configure("Cute.Treeview", 
+                background=self.colors["tree_bg"],  # Match theme background
+                foreground=self.colors["text_primary"],  # Match theme text color
                 rowheight=50,  # Increased row height
-                fieldbackground="#2d3748",
-                borderwidth=2)  # Increased border width
+                fieldbackground=self.colors["tree_bg"],
+                borderwidth=0)  # Hide border
             
-            # Configure the header style with more prominent headers
-            style.configure("Custom.Treeview.Heading",
-                background="#2563eb",  # Brighter blue headers
+            # Configure the header style with cute styling
+            style.configure("Cute.Treeview.Heading",
+                background=self.colors["tree_header"],  # Match theme accent
                 foreground="white",
                 relief="raised",
-                borderwidth=2,
+                borderwidth=0,
                 font=('Arial', 16, 'bold'))  # Increased font size and bold
             
             # Configure selection colors
-            style.map('Custom.Treeview', 
-                background=[('selected', '#3b82f6')],  # Bright blue selection
+            style.map('Cute.Treeview', 
+                background=[('selected', self.colors["accent"])],  # Match theme accent
                 foreground=[('selected', 'white')])
             
             # Configure the Treeview to show grid lines
-            style.layout("Custom.Treeview", [
-                ('Custom.Treeview.treearea', {'sticky': 'nswe'})
+            style.layout("Cute.Treeview", [
+                ('Cute.Treeview.treearea', {'sticky': 'nswe'})
             ])
-            style.configure("Custom.Treeview", 
+            style.configure("Cute.Treeview", 
                             borderwidth=0,
                             relief="flat")
                 
-            # Create Treeview with increased row height
+            # Create Treeview with increased row height and cute styling
             self.tree = ttk.Treeview(border_frame, columns=headers, show="headings", 
-                                    height=len(data), style="Custom.Treeview")
+                                    height=len(data), style="Cute.Treeview")
             
             # Configure column widths and headings
             column_width = 180
@@ -345,24 +555,24 @@ class EditPage(ctk.CTkFrame):
                 else:
                     self.tree.item(item_id, tags=('even_row',))
             
-            # Configure row styles with subtle alternating colors
-            self.tree.tag_configure('odd_row', background='#374151', font=('Arial', 14))  # Dark blue-gray
-            self.tree.tag_configure('even_row', background='#2d3748', font=('Arial', 14))  # Darker blue-gray
+            # Configure row styles with cute alternating colors
+            self.tree.tag_configure('odd_row', background=self.colors["tree_odd"], font=('Arial', 14))
+            self.tree.tag_configure('even_row', background=self.colors["tree_even"], font=('Arial', 14))
             
             # Add horizontal grid lines tag
-            self.tree.tag_configure('bottom_line', background='#4b5563')
+            self.tree.tag_configure('bottom_line', background=self.colors["border"])
             
-            # Add a custom scrollbar with improved styling
+            # Add a custom scrollbar with cute styling
             scrollbar_style = ttk.Style()
-            scrollbar_style.configure("Custom.Vertical.TScrollbar", 
-                                      background="#3a7ebf", 
-                                      troughcolor="#1e2433",
-                                      bordercolor="#3a7ebf",
+            scrollbar_style.configure("Cute.Vertical.TScrollbar", 
+                                      background=self.colors["accent"], 
+                                      troughcolor=self.colors["tree_bg"],
+                                      bordercolor=self.colors["border"],
                                       arrowcolor="white")
             
             scrollbar = ttk.Scrollbar(border_frame, orient="vertical", 
                                       command=self.tree.yview,
-                                      style="Custom.Vertical.TScrollbar")
+                                      style="Cute.Vertical.TScrollbar")
             self.tree.configure(yscrollcommand=scrollbar.set)
             
             # Place the treeview and scrollbar
@@ -372,9 +582,9 @@ class EditPage(ctk.CTkFrame):
             # Add a title for the table
             month_title = ctk.CTkLabel(
                 self.data_frame, 
-                text=f"{self.current_month} Data", 
-                font=ctk.CTkFont(size=20, weight="bold"),
-                text_color="#3b82f6"
+                text=f"🗓️ {self.current_month} Data", 
+                font=ctk.CTkFont(size=24, weight="bold"),
+                text_color=self.colors["accent"]
             )
             month_title.grid(row=0, column=0, sticky="n", pady=(0, 0))
             
@@ -566,15 +776,15 @@ class EditPage(ctk.CTkFrame):
         if header == "E-Add" and current_value and str(current_value).startswith('+'):
             current_value = str(current_value).replace('+', '').strip()
         
-        # Create a frame for better control with improved styling
-        edit_frame = tk.Frame(self.tree, bg="#3b82f6", highlightthickness=2, highlightbackground="#60a5fa")
+        # Create a frame for better control with cute styling
+        edit_frame = tk.Frame(self.tree, bg=self.colors["accent"], highlightthickness=2, highlightbackground=self.colors["accent_hover"])
         edit_frame.place(x=x, y=y, width=width, height=height)
         
-        # Create the entry widget with larger font and improved styling
+        # Create the entry widget with larger font and cute styling
         entry_var = tk.StringVar(value=current_value if current_value else "")
         entry = tk.Entry(edit_frame, textvariable=entry_var, 
                          font=('Arial', 16, 'bold'),  # Increased font size and bold
-                         bg="#3b82f6",
+                         bg=self.colors["accent"],
                          fg="white",
                          bd=0,
                          highlightthickness=0,
@@ -676,167 +886,601 @@ class CopyPage(ctk.CTkFrame):
         super().__init__(parent)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
+        
+        # Set cute color scheme based on appearance mode
+        self.update_colors()
 
         # --- Top: Create Copy Section ---
-        top_frame = ctk.CTkFrame(self, fg_color="transparent")
+        top_frame = ctk.CTkFrame(self, fg_color=self.colors["card_bg"], corner_radius=20)
         top_frame.grid(row=0, column=0, sticky="ew", padx=40, pady=(40, 20))
         top_frame.grid_columnconfigure(0, weight=1)
 
-        title = ctk.CTkLabel(top_frame, text="Create Yearly Excel Copy", 
-                           font=ctk.CTkFont(size=24, weight="bold"))
-        title.grid(row=0, column=0, sticky="w", pady=(0, 20))
+        # Cute title with emoji
+        title_frame = ctk.CTkFrame(top_frame, fg_color="transparent")
+        title_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 20))
+        title_frame.grid_columnconfigure(1, weight=1)
+        
+        ctk.CTkLabel(title_frame, text="✨", font=ctk.CTkFont(size=28)).grid(row=0, column=0, padx=(0, 10))
+        title = ctk.CTkLabel(title_frame, text="Create Yearly Excel Copy", 
+                           font=ctk.CTkFont(size=24, weight="bold", family="Arial"),
+                           text_color="#ffffff")  # Always white for better visibility
+        title.grid(row=0, column=1, sticky="w")
+        ctk.CTkLabel(title_frame, text="✨", font=ctk.CTkFont(size=28)).grid(row=0, column=2, padx=(10, 0))
 
-        entry_frame = ctk.CTkFrame(top_frame, fg_color="#2b2b2b", corner_radius=10)
-        entry_frame.grid(row=1, column=0, sticky="ew", pady=(10, 0))
+        # Entry frame with cute styling
+        entry_frame = ctk.CTkFrame(top_frame, fg_color=self.colors["bg_secondary"], corner_radius=15)
+        entry_frame.grid(row=1, column=0, sticky="ew", pady=(10, 20), padx=20)
         entry_frame.grid_columnconfigure(1, weight=1)
 
+        # Year entry with cute label
+        year_label = ctk.CTkLabel(entry_frame, 
+                                text="📅 Year Range:", 
+                                font=ctk.CTkFont(size=16, weight="bold", family="Arial"),
+                                text_color="#ffffff")  # Always white for better visibility
+        year_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="w")
+        
         self.year_entry = ctk.CTkEntry(entry_frame, 
                                      placeholder_text="Enter year range (e.g. 2024-2025)", 
-                                     font=ctk.CTkFont(size=16), 
+                                     font=ctk.CTkFont(size=16, family="Arial"), 
                                      width=300,
-                                     height=40)
-        self.year_entry.grid(row=0, column=0, padx=20, pady=20, sticky="w")
+                                     height=40,
+                                     fg_color=self.colors["input_bg"],
+                                     border_color=self.colors["border"],
+                                     corner_radius=10)
+        self.year_entry.grid(row=1, column=0, padx=20, pady=(5, 20), sticky="w")
         
+        # Add term selection dropdown with cute styling
+        term_frame = ctk.CTkFrame(entry_frame, fg_color="transparent")
+        term_frame.grid(row=2, column=0, padx=20, pady=(0, 20), sticky="w")
+        
+        ctk.CTkLabel(term_frame, 
+                   text="📘 Select Term:", 
+                   font=ctk.CTkFont(size=16, weight="bold", family="Arial"),
+                   text_color="#ffffff").grid(row=0, column=0, sticky="w", padx=(0, 10))
+        
+        self.term_var = ctk.StringVar(value="term1")
+        self.term_dropdown = ctk.CTkOptionMenu(term_frame,
+                                             values=["term1", "term2"],
+                                             variable=self.term_var,
+                                             width=150,
+                                             height=40,
+                                             font=ctk.CTkFont(size=14, family="Arial"),
+                                             fg_color=self.colors["dropdown_bg"],
+                                             button_color=self.colors["accent"],
+                                             button_hover_color=self.colors["accent_hover"],
+                                             dropdown_fg_color=self.colors["dropdown_bg"],
+                                             dropdown_hover_color=self.colors["dropdown_hover"],
+                                             dropdown_font=ctk.CTkFont(size=14, family="Arial"),
+                                             corner_radius=10,
+                                             text_color="#ffffff")  # Always white for better visibility
+        self.term_dropdown.grid(row=0, column=1, sticky="w", padx=(10, 0))
+        
+        # Copy button with cute styling
         self.copy_button = ctk.CTkButton(entry_frame, 
-                                       text="Create Copy", 
+                                       text="📋 Create Copy", 
                                        command=self.create_copy, 
-                                       font=ctk.CTkFont(size=16, weight="bold"), 
+                                       font=ctk.CTkFont(size=16, weight="bold", family="Arial"), 
                                        width=150,
-                                       height=40,
-                                       fg_color="#1f538d",
-                                       hover_color="#3a7ebf")
-        self.copy_button.grid(row=0, column=1, padx=20, pady=20, sticky="e")
+                                       height=45,
+                                       fg_color=self.colors["accent"],
+                                       hover_color=self.colors["accent_hover"],
+                                       corner_radius=15,
+                                       text_color="#ffffff")  # Always white for better visibility
+        self.copy_button.grid(row=0, column=1, rowspan=2, padx=20, pady=20, sticky="e")
         
+        # Status label with cute styling
         self.status_label = ctk.CTkLabel(entry_frame, 
                                        text="", 
-                                       font=ctk.CTkFont(size=14))
-        self.status_label.grid(row=1, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 20))
+                                       font=ctk.CTkFont(size=14, family="Arial"),
+                                       text_color="#ffffff")  # Will be changed when displaying messages
+        self.status_label.grid(row=3, column=0, columnspan=2, sticky="w", padx=20, pady=(0, 20))
 
         # --- Bottom: Available Copies List ---
-        list_frame = ctk.CTkFrame(self, fg_color="transparent")
+        list_frame = ctk.CTkFrame(self, fg_color=self.colors["card_bg"], corner_radius=20)
         list_frame.grid(row=1, column=0, sticky="nsew", padx=40, pady=(20, 40))
         list_frame.grid_columnconfigure(0, weight=1)
         list_frame.grid_rowconfigure(1, weight=1)
 
-        list_title = ctk.CTkLabel(list_frame, 
+        # Title with decorative elements
+        list_title_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
+        list_title_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 15))
+        list_title_frame.grid_columnconfigure(1, weight=1)
+        
+        ctk.CTkLabel(list_title_frame, text="📚", font=ctk.CTkFont(size=28)).grid(row=0, column=0, padx=(0, 10))
+        list_title = ctk.CTkLabel(list_title_frame, 
                                 text="Available Copies:", 
-                                font=ctk.CTkFont(size=20, weight="bold"))
-        list_title.grid(row=0, column=0, sticky="w", pady=(0, 15))
+                                font=ctk.CTkFont(size=20, weight="bold", family="Arial"),
+                                text_color="#ffffff")  # Always white for better visibility
+        list_title.grid(row=0, column=1, sticky="w")
 
-        # Scrollable frame for file list with improved styling
+        # Scrollable frame for file list with cute styling
         self.scrollable_frame = ctk.CTkScrollableFrame(list_frame, 
-                                                     fg_color="#2b2b2b", 
-                                                     corner_radius=10,
-                                                     height=350)
-        self.scrollable_frame.grid(row=1, column=0, sticky="nsew")
+                                                     fg_color=self.colors["bg_secondary"], 
+                                                     corner_radius=15,
+                                                     height=350,
+                                                     border_width=2,
+                                                     border_color=self.colors["border"])
+        self.scrollable_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
         self.scrollable_frame.grid_columnconfigure(0, weight=1)
+        
+        # Decorative elements at the bottom
+        deco_frame = ctk.CTkFrame(list_frame, fg_color="transparent")
+        deco_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
+        
+        for i, emoji in enumerate(["💗", "📊", "💗"]):
+            ctk.CTkLabel(deco_frame, 
+                       text=emoji, 
+                       font=ctk.CTkFont(size=20)).grid(row=0, column=i, padx=20)
+        
         self.refresh_file_list()
         self.new_file_path = None
+
+    def update_colors(self):
+        """Set color scheme based on appearance mode"""
+        if ctk.get_appearance_mode() == "Dark":
+            self.colors = {
+                "bg_primary": "#2d2438",  # Dark purple background
+                "bg_secondary": "#332b40",  # Medium dark purple
+                "card_bg": "#3a2b4a",  # Medium purple for cards
+                "accent": "#b76edc",  # Bright purple accent
+                "accent_hover": "#c78ae8",  # Lighter purple for hover
+                "text_primary": "#e6e6e6",  # Light gray for text
+                "dropdown_bg": "#3a2b4a",  # Medium purple for dropdown
+                "dropdown_hover": "#473960",  # Slightly lighter purple for hover
+                "input_bg": "#3a2b4a",  # Medium purple for input
+                "border": "#b76edc",  # Bright purple for borders
+                "file_bg": "#473960",  # Light purple for file rows
+                "file_hover": "#524372",  # Lighter purple for file row hover
+                "tree_bg": "#251f30",  # Darker purple for tree
+                "tree_even": "#2d2438",  # Dark purple
+                "tree_odd": "#332b40",  # Medium dark purple
+                "tree_header": "#b76edc"  # Bright purple for headers
+            }
+        else:
+            self.colors = {
+                "bg_primary": "#fff5f9",  # Very light pink background
+                "bg_secondary": "#fff0f5",  # Light pink
+                "card_bg": "#ffebf2",  # Lighter pink for cards
+                "accent": "#ffacc7",  # Medium pink accent
+                "accent_hover": "#ff85a1",  # Darker pink for hover
+                "text_primary": "#4a4a4a",  # Dark gray for text
+                "dropdown_bg": "#ffebf2",  # Lighter pink for dropdown
+                "dropdown_hover": "#ffd6e0",  # Medium light pink for hover
+                "input_bg": "#ffebf2",  # Lighter pink for input
+                "border": "#ffacc7",  # Medium pink for borders
+                "file_bg": "#ffd6e0",  # Medium light pink for file rows
+                "file_hover": "#ffc1d5",  # Slightly darker pink for file row hover
+                "tree_bg": "#fff5f9",  # Very light pink for tree
+                "tree_even": "#fff0f5",  # Light pink
+                "tree_odd": "#ffebf2",  # Lighter pink
+                "tree_header": "#ffacc7"  # Medium pink for headers
+            }
 
     def create_copy(self):
         year = self.year_entry.get().strip()
         if not year or not self._validate_year(year):
             self.status_label.configure(text="Please enter a valid year range (e.g. 2024-2025)", text_color="red")
             return
+            
+        # Get selected term - exact sheet name as it appears in Excel
+        term = self.term_var.get()  # Now directly "term1" or "term2"
+        
         os.makedirs("excel_copies", exist_ok=True)
-        new_file = f"excel_copies/iso_excel_{year}.xlsx"
+        new_file = f"excel_copies/iso_excel_{year}_{term}.xlsx"
+        
         try:
-            shutil.copyfile("iso_excel.xlsx", new_file)
-            self.status_label.configure(text=f"Copy created: {new_file}", text_color="#00ff00")
+            import openpyxl
+            
+            # Open the source file
+            src_wb = openpyxl.load_workbook("iso_excel.xlsx")
+            
+            # Check if the term sheet exists
+            if term not in src_wb.sheetnames:
+                self.status_label.configure(text=f"Error: Sheet '{term}' not found in template", text_color="red")
+                return
+                
+            # Create a new workbook
+            dst_wb = openpyxl.Workbook()
+            
+            # Get the source sheet by name (exactly as it appears in Excel)
+            src_sheet = src_wb[term]
+            
+            # Get destination default sheet
+            dst_sheet = dst_wb.active
+            dst_sheet.title = term
+            
+            # Copy cell values, styles, merged cells, etc.
+            for row in src_sheet.rows:
+                for cell in row:
+                    dst_cell = dst_sheet.cell(row=cell.row, column=cell.column)
+                    dst_cell.value = cell.value
+                    if cell.has_style:
+                        dst_cell.font = copy(cell.font)
+                        dst_cell.border = copy(cell.border)
+                        dst_cell.fill = copy(cell.fill)
+                        dst_cell.number_format = cell.number_format
+                        dst_cell.protection = copy(cell.protection)
+                        dst_cell.alignment = copy(cell.alignment)
+            
+            # Copy column dimensions
+            for col, width in src_sheet.column_dimensions.items():
+                dst_sheet.column_dimensions[col].width = width.width
+                
+            # Copy row dimensions
+            for row, height in src_sheet.row_dimensions.items():
+                dst_sheet.row_dimensions[row].height = height.height
+                
+            # Copy merged cells
+            for merged_cell_range in src_sheet.merged_cells.ranges:
+                dst_sheet.merge_cells(str(merged_cell_range))
+            
+            # Save the workbook
+            dst_wb.save(new_file)
+            
+            # Display success with cute emojis
+            self.status_label.configure(text=f"✅ Copy created with sheet '{term}': {new_file}", text_color="green")
             self.new_file_path = os.path.abspath(new_file)
             self.refresh_file_list()
+            
         except Exception as e:
-            self.status_label.configure(text=f"Error: {e}", text_color="red")
+            self.status_label.configure(text=f"❌ Error: {e}", text_color="red")
 
     def refresh_file_list(self):
+        """Refresh the list of available Excel files, filtering out system files."""
+        # Update colors in case appearance mode changed
+        self.update_colors()
+        
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
         files = []
+        
         if os.path.exists("excel_copies"):
-            files = [f for f in os.listdir("excel_copies") if f.endswith(".xlsx")]
+            # Get only valid Excel files, filtering out system files and temp files
+            all_files = os.listdir("excel_copies")
+            files = [f for f in all_files if (
+                f.endswith(".xlsx") and  # Only Excel files
+                not f.startswith("~") and  # Not temp files
+                not f.startswith("$") and  # Not system files
+                not f.startswith(".")  # Not hidden files
+            )]
+            
         if not files:
-            ctk.CTkLabel(self.scrollable_frame, 
+            no_files_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
+            no_files_frame.grid(row=0, column=0, sticky="ew", pady=20, padx=20)
+            
+            # Add a cute empty state message with emoji
+            ctk.CTkLabel(no_files_frame, 
+                        text="📭", 
+                        font=ctk.CTkFont(size=40)).grid(row=0, column=0, pady=(20, 10))
+                        
+            ctk.CTkLabel(no_files_frame, 
                         text="No copies found.", 
-                        font=ctk.CTkFont(size=16)).grid(row=0, column=0, sticky="w", pady=10, padx=10)
+                        font=ctk.CTkFont(size=18, weight="bold"),
+                        text_color=self.colors["accent"]).grid(row=1, column=0, pady=(10, 20))
         else:
             for i, fname in enumerate(sorted(files), start=0):
                 file_path = os.path.abspath(os.path.join("excel_copies", fname))
-                row_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="#333333", corner_radius=5)
-                row_frame.grid(row=i, column=0, sticky="ew", pady=6, padx=10)
+                
+                # Create a cute file row with hover effect
+                row_frame = ctk.CTkFrame(self.scrollable_frame, 
+                                       fg_color=self.colors["file_bg"], 
+                                       corner_radius=10)
+                row_frame.grid(row=i, column=0, sticky="ew", pady=8, padx=15)
                 row_frame.grid_columnconfigure(0, weight=1)
                 
-                file_label = ctk.CTkLabel(row_frame, 
-                                        text=fname, 
-                                        font=ctk.CTkFont(size=16))
-                file_label.grid(row=0, column=0, sticky="w", padx=15, pady=12)
+                # File content frame
+                file_content = ctk.CTkFrame(row_frame, fg_color="transparent")
+                file_content.grid(row=0, column=0, sticky="w", padx=15, pady=12)
+                file_content.grid_columnconfigure(1, weight=1)
                 
+                # File icon
+                ctk.CTkLabel(file_content, 
+                           text="📄", 
+                           font=ctk.CTkFont(size=20)).grid(row=0, column=0, padx=(0, 10))
+                
+                # File name
+                file_label = ctk.CTkLabel(file_content, 
+                                        text=fname, 
+                                        font=ctk.CTkFont(size=16, weight="bold"),
+                                        text_color=self.colors["text_primary"])
+                file_label.grid(row=0, column=1, sticky="w")
+                
+                # Open button with cute styling
                 open_btn = ctk.CTkButton(row_frame, 
-                                       text="Open", 
+                                       text="📂 Open", 
                                        width=100,
                                        height=32,
-                                       font=ctk.CTkFont(size=14),
-                                       fg_color="#1f538d",
-                                       hover_color="#3a7ebf",
+                                       font=ctk.CTkFont(size=14, weight="bold"),
+                                       fg_color=self.colors["accent"],
+                                       hover_color=self.colors["accent_hover"],
+                                       corner_radius=10,
                                        command=lambda p=file_path: webbrowser.open(f"file://{p}"))
                 open_btn.grid(row=0, column=1, padx=(12, 15), pady=12)
+                
+                # Create highlight effect on hover
+                def on_enter(e, frame=row_frame):
+                    frame.configure(fg_color=self.colors["file_hover"])
+                    
+                def on_leave(e, frame=row_frame):
+                    frame.configure(fg_color=self.colors["file_bg"])
+                    
+                row_frame.bind("<Enter>", on_enter)
+                row_frame.bind("<Leave>", on_leave)
 
     def _validate_year(self, year):
         import re
         return re.match(r"^20\d{2}-20\d{2}$", year)
 
+class SplashScreen(ctk.CTkToplevel):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.alpha = 0.0  # Start fully transparent
+        
+        # Set up the splash window
+        self.overrideredirect(True)  # No window decorations
+        self.wm_attributes("-topmost", True)  # Keep on top
+        self.attributes("-alpha", self.alpha)  # Set initial transparency
+        
+        # Calculate position (center on screen)
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        splash_width = 650
+        splash_height = 450
+        x = (screen_width - splash_width) // 2
+        y = (screen_height - splash_height) // 2
+        self.geometry(f"{splash_width}x{splash_height}+{x}+{y}")
+        
+        # Create a frame with a cute pastel background
+        if ctk.get_appearance_mode() == "Dark":
+            bg_color = "#2d2438"  # Dark purple
+            inner_color = "#3a2b4a"  # Medium purple
+            border_color = "#b76edc"  # Bright purple
+            title_color = "#e2b6ff"  # Light purple
+            subtitle_color = "#c78ae8"  # Medium light purple
+        else:
+            bg_color = "#fff0f5"  # Light pink
+            inner_color = "#ffebf2"  # Lighter pink
+            border_color = "#ffacc7"  # Medium pink
+            title_color = "#ff85a1"  # Darker pink
+            subtitle_color = "#ffacc7"  # Medium pink
+            
+        self.configure(fg_color=bg_color)
+        
+        # Main content frame with cute border
+        content_frame = ctk.CTkFrame(self, fg_color=inner_color, corner_radius=25, 
+                                   border_width=4, border_color=border_color)
+        content_frame.grid(row=0, column=0, sticky="nsew", padx=40, pady=40)
+        content_frame.grid_columnconfigure(0, weight=1)
+        content_frame.grid_rowconfigure(3, weight=0)
+        
+        # Grid configuration for the main window
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        
+        # Top decoration - row of cute emojis
+        top_emojis = ctk.CTkFrame(content_frame, fg_color="transparent")
+        top_emojis.grid(row=0, column=0, pady=(20, 0))
+        
+        for i, emoji in enumerate(["🌸", "✨", "💖", "✨", "🌸"]):
+            ctk.CTkLabel(
+                top_emojis,
+                text=emoji,
+                font=ctk.CTkFont(size=30),
+            ).grid(row=0, column=i, padx=15)
+        
+        # Welcome text with cute styling
+        welcome_label = ctk.CTkLabel(
+            content_frame,
+            text="Welcome Mummy",
+            font=ctk.CTkFont(family="Arial", size=42, weight="bold"),
+            text_color=title_color
+        )
+        welcome_label.grid(row=1, column=0, pady=(20, 0))
+        
+        # Subtitle text
+        subtitle_label = ctk.CTkLabel(
+            content_frame,
+            text="to your ISO Manager",
+            font=ctk.CTkFont(family="Arial", size=24, weight="bold"),
+            text_color=subtitle_color
+        )
+        subtitle_label.grid(row=2, column=0, pady=(5, 30))
+        
+        # Create a cute image frame
+        image_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+        image_frame.grid(row=3, column=0, sticky="ew", pady=(0, 20))
+        
+        # Add spreadsheet icon with big emoji
+        spreadsheet_label = ctk.CTkLabel(
+            image_frame,
+            text="📊",
+            font=ctk.CTkFont(size=80),
+        )
+        spreadsheet_label.pack(pady=5)
+        
+        # Prettier, gradient-like progress bar
+        progress_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
+        progress_frame.grid(row=4, column=0, sticky="ew", pady=(10, 10), padx=80)
+        progress_frame.grid_columnconfigure(0, weight=1)
+        
+        self.spinner = ctk.CTkProgressBar(progress_frame, width=400, height=20, 
+                                        corner_radius=10, 
+                                        progress_color=border_color,
+                                        fg_color="#473960" if ctk.get_appearance_mode() == "Dark" else "#ffe0e9")
+        self.spinner.grid(row=0, column=0, pady=10)
+        self.spinner.set(0)
+        
+        # Loading text
+        self.loading_label = ctk.CTkLabel(
+            content_frame,
+            text="Loading...",
+            font=ctk.CTkFont(family="Arial", size=18, weight="bold"),
+            text_color=subtitle_color
+        )
+        self.loading_label.grid(row=5, column=0, pady=(5, 20))
+        
+        # Bottom decoration - row of cute emojis
+        bottom_emojis = ctk.CTkFrame(content_frame, fg_color="transparent")
+        bottom_emojis.grid(row=6, column=0, pady=(0, 20))
+        
+        for i, emoji in enumerate(["💕", "✨", "🎀", "✨", "💕"]):
+            ctk.CTkLabel(
+                bottom_emojis,
+                text=emoji,
+                font=ctk.CTkFont(size=30),
+            ).grid(row=0, column=i, padx=15)
+        
+        # Start animation sequence
+        self.after(100, self.fade_in)
+    
+    def fade_in(self):
+        """Fade in the splash screen"""
+        if self.alpha < 1.0:
+            self.alpha += 0.05
+            self.attributes("-alpha", self.alpha)
+            self.after(20, self.fade_in)
+        else:
+            # Once fully visible, start the progress animation
+            self.after(100, lambda: self.animate_progress(0))
+    
+    def animate_progress(self, progress):
+        """Animate the progress bar with cute loading messages"""
+        loading_messages = [
+            "Loading your data... 💾",
+            "Preparing your workspace... 🎀",
+            "Sprinkling some sparkles... ✨",
+            "Almost ready... 🌈",
+            "Just a moment... 💫",
+            "Setting things up for you... 🌸"
+        ]
+        
+        if progress <= 1.0:
+            self.spinner.set(progress)
+            
+            # Update loading message periodically
+            if progress % 0.15 < 0.02 and progress > 0:
+                msg_index = int(min(progress * 6, 5))
+                self.loading_label.configure(text=loading_messages[msg_index])
+                
+            self.after(30, lambda: self.animate_progress(progress + 0.01))
+        else:
+            # Show completion message
+            self.loading_label.configure(text="Ready to go! 🎉")
+            # After progress completes, fade out
+            self.after(800, self.fade_out)
+    
+    def fade_out(self):
+        """Fade out the splash screen"""
+        if self.alpha > 0:
+            self.alpha -= 0.05
+            self.attributes("-alpha", self.alpha)
+            self.after(20, self.fade_out)
+        else:
+            # After fade out, destroy splash and show main app
+            self.destroy()
+            self.app.deiconify()  # Show the main app window
+
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Excel File Manager")
+        self.title("ISO")
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         self.geometry(f"{screen_width}x{screen_height}+0+0")
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
         
-        # Sidebar with improved styling
-        self.sidebar = ctk.CTkFrame(self, width=240, fg_color="#1a1a1a")
+        # Set cute color scheme - dark mode only
+        self.cute_colors = {
+            "bg_primary": "#2d2438",  # Dark purple background
+            "bg_secondary": "#3a2b4a",  # Medium purple
+            "accent": "#b76edc",  # Bright purple accent
+            "accent_hover": "#c78ae8",  # Lighter purple for hover
+            "text_primary": "#ffffff",  # White text for better visibility
+            "text_light": "#ffffff",  # White text
+            "title_bg": "#b76edc",  # Purple title background
+            "button_bg": "#3a2b4a",  # Dark purple button background
+            "button_active": "#b76edc",  # Bright purple for active button
+            "content_bg": "#2d2438"  # Dark purple content background
+        }
+        
+        # Always use dark mode
+        ctk.set_appearance_mode("dark")
+        
+        # Initially hide the main window
+        self.withdraw()
+        
+        # Sidebar with cute styling
+        self.sidebar = ctk.CTkFrame(self, width=240, fg_color=self.cute_colors["bg_primary"], corner_radius=0)
         self.sidebar.grid(row=0, column=0, sticky="nsw", padx=0, pady=0)
         self.sidebar.grid_propagate(False)
         self.sidebar.grid_rowconfigure(10, weight=1)
         self.sidebar.grid_columnconfigure(0, weight=1)
         
-        # App title
-        title_frame = ctk.CTkFrame(self.sidebar, fg_color="#1f538d", height=80)
-        title_frame.grid(row=0, column=0, sticky="ew", padx=0, pady=(0, 20))
-        title_frame.grid_propagate(False)
-        title_frame.grid_columnconfigure(0, weight=1)
+        # App title with cute styling - store reference for theme changing
+        self.title_frame = ctk.CTkFrame(self.sidebar, fg_color=self.cute_colors["title_bg"], height=120, corner_radius=0)
+        self.title_frame.grid(row=0, column=0, sticky="ew", padx=0, pady=(0, 20))
+        self.title_frame.grid_propagate(False)
+        self.title_frame.grid_columnconfigure(0, weight=1)
         
-        title_label = ctk.CTkLabel(title_frame, 
-                                  text="Excel Manager", 
-                                  font=ctk.CTkFont(size=22, weight="bold"),
-                                  text_color="white")
-        title_label.grid(row=0, column=0, padx=20, pady=20)
+        # Add cute icon before title
+        title_content = ctk.CTkFrame(self.title_frame, fg_color="transparent")
+        title_content.grid(row=0, column=0, padx=10, pady=20)
+        title_content.grid_columnconfigure(1, weight=1)
         
-        # Navigation buttons with improved styling
-        self.copy_button = ctk.CTkButton(self.sidebar, 
+        # Left cute icon - larger
+        ctk.CTkLabel(title_content, 
+                     text="📊", 
+                     font=ctk.CTkFont(size=40)).grid(row=0, column=0, padx=(5, 15))
+        
+        # Make title text bigger and ensure it's white for contrast
+        self.title_label = ctk.CTkLabel(title_content, 
+                                  text="ISO", 
+                                  font=ctk.CTkFont(size=36, weight="bold", family="Arial"),
+                                  text_color="#ffffff")
+        self.title_label.grid(row=0, column=1, padx=5)
+        
+        # Right cute icon - larger
+        ctk.CTkLabel(title_content, 
+                     text="✨", 
+                     font=ctk.CTkFont(size=40)).grid(row=0, column=2, padx=(15, 5))
+        
+        # Navigation buttons with cute styling
+        button_frame = ctk.CTkFrame(self.sidebar, fg_color="transparent")
+        button_frame.grid(row=1, column=0, padx=15, pady=15, sticky="ew")
+        
+        self.copy_button = ctk.CTkButton(button_frame, 
                                         text="Manage Excel Copies", 
                                         command=self.show_copy, 
                                         font=ctk.CTkFont(size=16, weight="bold"),
                                         height=50,
-                                        fg_color="#2b2b2b",
-                                        hover_color="#3a7ebf",
-                                        corner_radius=5)
-        self.copy_button.grid(row=1, column=0, padx=20, pady=(10, 10), sticky="ew")
+                                        fg_color=self.cute_colors["button_bg"],
+                                        text_color=self.cute_colors["text_primary"],
+                                        hover_color=self.cute_colors["accent"],
+                                        corner_radius=15)
+        self.copy_button.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
         
-        self.edit_button = ctk.CTkButton(self.sidebar, 
+        self.edit_button = ctk.CTkButton(button_frame, 
                                         text="Edit Data", 
                                         command=self.show_edit, 
                                         font=ctk.CTkFont(size=16, weight="bold"),
                                         height=50,
-                                        fg_color="#2b2b2b",
-                                        hover_color="#3a7ebf",
-                                        corner_radius=5)
-        self.edit_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+                                        fg_color=self.cute_colors["button_bg"],
+                                        text_color=self.cute_colors["text_primary"],
+                                        hover_color=self.cute_colors["accent"],
+                                        corner_radius=15)
+        self.edit_button.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
         
-        # Main content with improved styling
-        self.content_frame = ctk.CTkFrame(self, fg_color="#212121")
-        self.content_frame.grid(row=0, column=1, sticky="nsew", padx=0, pady=0)
+        # Decorative elements
+        for i, emoji in enumerate(["🌸", "💜", "🌸"]):
+            ctk.CTkLabel(self.sidebar, 
+                         text=emoji, 
+                         font=ctk.CTkFont(size=24)).grid(row=2+i, column=0, pady=5)
+        
+        # Main content with cute styling
+        self.content_frame = ctk.CTkFrame(self, fg_color=self.cute_colors["content_bg"], corner_radius=20)
+        self.content_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
         self.content_frame.grid_columnconfigure(0, weight=1)
         self.content_frame.grid_rowconfigure(0, weight=1)
         
@@ -845,37 +1489,32 @@ class App(ctk.CTk):
             "edit": EditPage(self.content_frame)
         }
         self.current_page = None
+        
+        # Footer with cute design
+        footer_frame = ctk.CTkFrame(self.sidebar, fg_color="transparent")
+        footer_frame.grid(row=15, column=0, sticky="ew", padx=15, pady=15)
+        
+        ctk.CTkLabel(footer_frame, 
+                    text="Made with 💖",
+                    font=ctk.CTkFont(size=14),
+                    text_color=self.cute_colors["accent"]).pack(pady=5)
+        
+        # Create splash screen after initializing the main app
+        self.splash = SplashScreen(self)
+        
+        # Show initial page
         self.show_copy()
-        
-        # Appearance mode switcher with improved styling
-        appearance_frame = ctk.CTkFrame(self.sidebar, fg_color="transparent")
-        appearance_frame.grid(row=9, column=0, sticky="ew", padx=20, pady=(0, 20))
-        appearance_frame.grid_columnconfigure(1, weight=1)
-        
-        ctk.CTkLabel(appearance_frame, 
-                    text="Theme:", 
-                    font=ctk.CTkFont(size=14)).grid(row=0, column=0, sticky="w", pady=10)
-        
-        self.appearance_mode_menu = ctk.CTkOptionMenu(
-            appearance_frame,
-            values=["Light", "Dark", "System"],
-            command=self.change_appearance_mode_event,
-            width=120,
-            font=ctk.CTkFont(size=14)
-        )
-        self.appearance_mode_menu.set("Dark")
-        self.appearance_mode_menu.grid(row=0, column=1, sticky="e", pady=10)
-        
+
     def show_copy(self):
         self._show_page("copy")
-        self.copy_button.configure(fg_color="#1f538d")
-        self.edit_button.configure(fg_color="#2b2b2b")
+        self.copy_button.configure(fg_color=self.cute_colors["accent"])
+        self.edit_button.configure(fg_color=self.cute_colors["button_bg"])
         self.pages["copy"].refresh_file_list()
         
     def show_edit(self):
         self._show_page("edit")
-        self.edit_button.configure(fg_color="#1f538d")
-        self.copy_button.configure(fg_color="#2b2b2b")
+        self.edit_button.configure(fg_color=self.cute_colors["accent"])
+        self.copy_button.configure(fg_color=self.cute_colors["button_bg"])
         self.pages["edit"].load_files()
         
     def _show_page(self, page):
@@ -883,12 +1522,28 @@ class App(ctk.CTk):
             self.current_page.grid_remove()
         self.pages[page].grid(row=0, column=0, sticky="nsew")
         self.current_page = self.pages[page]
-        
-    def change_appearance_mode_event(self, new_appearance_mode: str):
-        ctk.set_appearance_mode(new_appearance_mode)
 
 if __name__ == "__main__":
+    # Always use dark mode
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
+    
+    # Set fonts
+    try:
+        # Try to use a cute font if available
+        if "Arial" in tk.font.families():
+            default_font = "Arial"
+        elif "Helvetica" in tk.font.families():
+            default_font = "Helvetica"
+        else:
+            default_font = None
+            
+        if default_font:
+            default_font_size = 14
+            tk.font.nametofont("TkDefaultFont").configure(family=default_font, size=default_font_size)
+            tk.font.nametofont("TkTextFont").configure(family=default_font, size=default_font_size)
+    except Exception:
+        pass
+    
     app = App()
     app.mainloop()
