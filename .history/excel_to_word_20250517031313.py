@@ -159,16 +159,6 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
         doc = Document(template_path)
         month_num = get_month_number(month_name)
         term_month_index = get_term_month_index(month_name, term=file_info1['term'])
-        
-        # For TOTAL page, format the month name as "START-END"
-        if month_name.upper() == 'TOTAL':
-            # Get all months from the field maps
-            all_months = sorted(set(columns1.keys()) & set(columns2.keys()) - {'TOTAL'})
-            if all_months:
-                start_month = all_months[0]
-                end_month = all_months[-1]
-                month_name = f"{start_month}-{end_month}"
-        
         replacements = {
             "{{year}}": file_info1['year_range'],
             "{{act_mon}}": month_num,
@@ -176,7 +166,6 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
             "{{month}}": month_name,
             "ES/00": f"ES/{file_info1['standard']}"
         }
-        
         for paragraph in doc.paragraphs:
             replace_placeholders_in_paragraph(paragraph, replacements)
         target_table = None
@@ -213,12 +202,7 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
         for data_idx, (data_row1, data_row2) in enumerate(zip(data_rows1, data_rows2)):
             if not data_row1 or len(data_row1) < 2 or not data_row2 or len(data_row2) < 2:
                 continue
-                
-            # For TOTAL page, look for the row that starts with "TOTAL"
-            if month_name.upper() == 'TOTAL' and data_row1[0].strip().upper() != 'TOTAL':
-                continue
-            # For regular months, stop at TOTAL row
-            elif month_name.upper() != 'TOTAL' and data_row1[0].strip().upper() == 'TOTAL':
+            if data_row1[0].strip().upper() == 'TOTAL' or data_row2[0].strip().upper() == 'TOTAL':
                 break
 
             table_row_idx = first_data_row + data_idx
@@ -560,25 +544,15 @@ def process_dual_excel_files(excel_path1, excel_path2, template_path="executive_
         # Get all month files and sort them by month order
         month_order = ['JUNE', 'JULY', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC', 'JAN', 'FEB', 'MAR', 'APR', 'MAY']
         month_files = []
-        total_file = None
-        
         for file in os.listdir(month_folder):
             if file.endswith('.docx'):
-                file_path = os.path.join(month_folder, file)
-                if file.startswith('TOTAL'):
-                    total_file = file_path
-                else:
-                    month_name = file.split('_')[0].upper()
-                    if month_name in month_order:
-                        month_files.append((month_order.index(month_name), file_path))
+                month_name = file.split('_')[0].upper()
+                if month_name in month_order:
+                    month_files.append((month_order.index(month_name), os.path.join(month_folder, file)))
         
         # Sort files by month order
         month_files.sort(key=lambda x: x[0])
         month_files = [x[1] for x in month_files]  # Extract just the file paths
-        
-        # Add TOTAL file at the end if it exists
-        if total_file:
-            month_files.append(total_file)
         
         if WIN32COM_AVAILABLE:
             merge_with_win32com(month_files, combined_path)

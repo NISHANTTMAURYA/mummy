@@ -22,11 +22,11 @@ logger = logging.getLogger(__name__)
 def parse_filename(filename):
     """Extract information from the filename."""
     # Expected format: iso_excel_YYYY-YYYY_termN_STD.csv
-    pattern = r'iso_excel_(\d{4}-\d{4})_term(\d+)_(\w+)\.(csv|xlsx|xls)'
+    pattern = r'iso_excel_(\d{4}-\d{4})_term(\d+)_(\w+)\.csv'
     match = re.match(pattern, os.path.basename(filename))
     
     if match:
-        year_range, term, std, _ = match.groups()
+        year_range, term, std = match.groups()
         # Convert STD to actual standard (FYJC=XI and SYJC=XII)
         std_mapping = {"FYJC": "XI", "SYJC": "XII"}
         standard = std_mapping.get(std, std)
@@ -153,30 +153,19 @@ def parse_month_field_columns(header_row, field_row):
     
     return month_field_map
 
-def process_single_month(template_path, month_name, data_rows1, data_rows2, columns1, columns2, file_info1, file_info2, output_path):
+def process_single_month(template_path, month_name, data_rows, columns, file_info, output_path, month_field_map=None):
     """Process a single month and save to output path."""
     try:
         doc = Document(template_path)
         month_num = get_month_number(month_name)
-        term_month_index = get_term_month_index(month_name, term=file_info1['term'])
-        
-        # For TOTAL page, format the month name as "START-END"
-        if month_name.upper() == 'TOTAL':
-            # Get all months from the field maps
-            all_months = sorted(set(columns1.keys()) & set(columns2.keys()) - {'TOTAL'})
-            if all_months:
-                start_month = all_months[0]
-                end_month = all_months[-1]
-                month_name = f"{start_month}-{end_month}"
-        
+        term_month_index = get_term_month_index(month_name, term=file_info['term'])
         replacements = {
-            "{{year}}": file_info1['year_range'],
+            "{{year}}": file_info['year_range'],
             "{{act_mon}}": month_num,
             "{{term_mon}}": term_month_index,
             "{{month}}": month_name,
-            "ES/00": f"ES/{file_info1['standard']}"
+            "ES/00": f"ES/{file_info['standard']}"
         }
-        
         for paragraph in doc.paragraphs:
             replace_placeholders_in_paragraph(paragraph, replacements)
         target_table = None
@@ -196,85 +185,80 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
             logger.error("Could not find target table or placeholder row in template")
             return False
         target_table._tbl.remove(target_table.rows[placeholder_row_idx]._tr)
+        is_syjc = file_info['original_std'] == 'SYJC'
+        is_fyjc = file_info['original_std'] == 'FYJC'
         first_data_row = placeholder_row_idx
-
-        # Get field maps for both files
-        if month_name.upper() not in columns1 and 'TOTAL' in columns1:
-            field_map1 = columns1['TOTAL']
+        # Use the correct field_map: for TOTAL page, always use 'TOTAL' as the key
+        if month_field_map:
+            if month_name.upper() not in month_field_map and 'TOTAL' in month_field_map:
+                field_map = month_field_map['TOTAL']
+            else:
+                field_map = month_field_map.get(month_name.upper(), columns)
         else:
-            field_map1 = columns1.get(month_name.upper(), columns1)
-        
-        if month_name.upper() not in columns2 and 'TOTAL' in columns2:
-            field_map2 = columns2['TOTAL']
-        else:
-            field_map2 = columns2.get(month_name.upper(), columns2)
-
-        # Process data from both files
-        for data_idx, (data_row1, data_row2) in enumerate(zip(data_rows1, data_rows2)):
-            if not data_row1 or len(data_row1) < 2 or not data_row2 or len(data_row2) < 2:
+            field_map = columns
+        for data_idx, data_row in enumerate(data_rows):
+            if not data_row or len(data_row) < 2:
                 continue
-                
-            # For TOTAL page, look for the row that starts with "TOTAL"
-            if month_name.upper() == 'TOTAL' and data_row1[0].strip().upper() != 'TOTAL':
-                continue
-            # For regular months, stop at TOTAL row
-            elif month_name.upper() != 'TOTAL' and data_row1[0].strip().upper() == 'TOTAL':
+            if data_row[0].strip().upper() == 'TOTAL':
                 break
-
             table_row_idx = first_data_row + data_idx
             if table_row_idx >= len(target_table.rows):
                 logger.warning(f"Not enough rows in table for data row {data_idx+1}, adding row.")
                 target_table.add_row()
-            
             row = target_table.rows[table_row_idx]
-
-            # Fill SR.NO. and INITIALS (use data from first file)
+            # Fill SR.NO. and INITIALS
             if col_map.get('{{col_srno}}') is not None:
-                row.cells[col_map['{{col_srno}}']].text = data_row1[0].strip()
-            if col_map.get('{{col_initials}}') is not None and len(data_row1) > 1:
-                row.cells[col_map['{{col_initials}}']].text = data_row1[1].strip()
-
-            # Get indices for ALLOTTED, ENGAGED, GAP for both files
-            allotted_idx1 = field_map1.get('ALLOTTED')
-            engaged_idx1 = field_map1.get('ENGAGED')
-            gap_idx1 = field_map1.get('GAP')
-            
-            allotted_idx2 = field_map2.get('ALLOTTED')
-            engaged_idx2 = field_map2.get('ENGAGED')
-            gap_idx2 = field_map2.get('GAP')
-
-            # Fill XI columns (FYJC data)
-            if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx1 is not None and len(data_row1) > allotted_idx1:
-                row.cells[col_map['{{col_xi_allotted}}']].text = data_row1[allotted_idx1]
+                row.cells[col_map['{{col_srno}}']].text = data_row[0].strip()
+            if col_map.get('{{col_initials}}') is not None and len(data_row) > 1:
+                row.cells[col_map['{{col_initials}}']].text = data_row[1].strip()
+            # Find indices for ALLOTTED, ENGAGED, GAP in the CSV for this month
+            allotted_idx = field_map.get('ALLOTTED')
+            engaged_idx = field_map.get('ENGAGED')
+            gap_idx = field_map.get('GAP')
+            # Fill XI columns (FYJC or always if you want to show --)
+            if is_fyjc or not is_syjc:
+                if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx is not None and len(data_row) > allotted_idx:
+                    row.cells[col_map['{{col_xi_allotted}}']].text = data_row[allotted_idx]
+                else:
+                    row.cells[col_map['{{col_xi_allotted}}']].text = '--'
+                if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx is not None and len(data_row) > engaged_idx:
+                    row.cells[col_map['{{col_xi_engaged}}']].text = data_row[engaged_idx]
+                else:
+                    row.cells[col_map['{{col_xi_engaged}}']].text = '--'
+                if col_map.get('{{col_xi_gap}}') is not None and gap_idx is not None and len(data_row) > gap_idx:
+                    val = data_row[gap_idx]
+                    row.cells[col_map['{{col_xi_gap}}']].text = val
+                else:
+                    row.cells[col_map['{{col_xi_gap}}']].text = '--'
             else:
-                row.cells[col_map['{{col_xi_allotted}}']].text = '--'
-
-            if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx1 is not None and len(data_row1) > engaged_idx1:
-                row.cells[col_map['{{col_xi_engaged}}']].text = data_row1[engaged_idx1]
+                if col_map.get('{{col_xi_allotted}}') is not None:
+                    row.cells[col_map['{{col_xi_allotted}}']].text = '--'
+                if col_map.get('{{col_xi_engaged}}') is not None:
+                    row.cells[col_map['{{col_xi_engaged}}']].text = '--'
+                if col_map.get('{{col_xi_gap}}') is not None:
+                    row.cells[col_map['{{col_xi_gap}}']].text = '--'
+            # Fill XII columns (SYJC or always if you want to show --)
+            if is_syjc or not is_fyjc:
+                if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx is not None and len(data_row) > allotted_idx:
+                    row.cells[col_map['{{col_xii_allotted}}']].text = data_row[allotted_idx]
+                else:
+                    row.cells[col_map['{{col_xii_allotted}}']].text = '--'
+                if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx is not None and len(data_row) > engaged_idx:
+                    row.cells[col_map['{{col_xii_engaged}}']].text = data_row[engaged_idx]
+                else:
+                    row.cells[col_map['{{col_xii_engaged}}']].text = '--'
+                if col_map.get('{{col_xii_gap}}') is not None and gap_idx is not None and len(data_row) > gap_idx:
+                    val = data_row[gap_idx]
+                    row.cells[col_map['{{col_xii_gap}}']].text = val
+                else:
+                    row.cells[col_map['{{col_xii_gap}}']].text = '--'
             else:
-                row.cells[col_map['{{col_xi_engaged}}']].text = '--'
-
-            if col_map.get('{{col_xi_gap}}') is not None and gap_idx1 is not None and len(data_row1) > gap_idx1:
-                row.cells[col_map['{{col_xi_gap}}']].text = data_row1[gap_idx1]
-            else:
-                row.cells[col_map['{{col_xi_gap}}']].text = '--'
-
-            # Fill XII columns (SYJC data)
-            if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx2 is not None and len(data_row2) > allotted_idx2:
-                row.cells[col_map['{{col_xii_allotted}}']].text = data_row2[allotted_idx2]
-            else:
-                row.cells[col_map['{{col_xii_allotted}}']].text = '--'
-
-            if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx2 is not None and len(data_row2) > engaged_idx2:
-                row.cells[col_map['{{col_xii_engaged}}']].text = data_row2[engaged_idx2]
-            else:
-                row.cells[col_map['{{col_xii_engaged}}']].text = '--'
-
-            if col_map.get('{{col_xii_gap}}') is not None and gap_idx2 is not None and len(data_row2) > gap_idx2:
-                row.cells[col_map['{{col_xii_gap}}']].text = data_row2[gap_idx2]
-            else:
-                row.cells[col_map['{{col_xii_gap}}']].text = '--'
-
+                if col_map.get('{{col_xii_allotted}}') is not None:
+                    row.cells[col_map['{{col_xii_allotted}}']].text = '--'
+                if col_map.get('{{col_xii_engaged}}') is not None:
+                    row.cells[col_map['{{col_xii_engaged}}']].text = '--'
+                if col_map.get('{{col_xii_gap}}') is not None:
+                    row.cells[col_map['{{col_xii_gap}}']].text = '--'
         doc.save(output_path)
         logger.info(f"Processed {month_name} and saved to {output_path}")
         return True
@@ -313,7 +297,7 @@ def merge_with_win32com(docx_files, output_file):
     finally:
         word.Quit()
 
-def create_multi_month_document(csv_path1, csv_path2, template_path, output_folder="output_word_files"):
+def create_multi_month_document(csv_path, template_path, output_folder="output_word_files"):
     """Create individual month files and then provide instructions to manually combine them."""
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -323,84 +307,115 @@ def create_multi_month_document(csv_path1, csv_path2, template_path, output_fold
     if not os.path.exists(month_folder):
         os.makedirs(month_folder)
     
-    file1_info = parse_filename(csv_path1)
-    file2_info = parse_filename(csv_path2)
-    
-    if not file1_info or not file2_info:
-        logger.error(f"Could not parse information from filenames: {csv_path1} or {csv_path2}")
+    file_info = parse_filename(csv_path)
+    if not file_info:
+        logger.error(f"Could not parse information from filename: {csv_path}")
         return False
     
-    logger.info(f"Processing files: {csv_path1} and {csv_path2}")
-    logger.info(f"File 1 info: {file1_info}")
-    logger.info(f"File 2 info: {file2_info}")
+    logger.info(f"Processing file: {csv_path}")
+    logger.info(f"File info: {file_info}")
     
-    # Define proper month order
-    month_order = ['JUNE', 'JULY', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC', 'JAN', 'FEB', 'MAR', 'APR', 'MAY']
     month_files = []
     
     try:
         # Open with UTF-8-SIG to handle BOM
-        with open(csv_path1, 'r', newline='', encoding='utf-8-sig') as csvfile1, open(csv_path2, 'r', newline='', encoding='utf-8-sig') as csvfile2:
-            reader1 = csv.reader(csvfile1)
-            reader2 = csv.reader(csvfile2)
+        with open(csv_path, 'r', newline='', encoding='utf-8-sig') as csvfile:
+            reader = csv.reader(csvfile)
             
             # First row contains months
-            header_row1 = next(reader1)
-            header_row2 = next(reader2)
+            header_row = next(reader)
             
             # Second row contains column labels
-            field_row1 = next(reader1)
-            field_row2 = next(reader2)
+            field_row = next(reader)
             
             # Map column indices for each month
-            month_field_map1 = parse_month_field_columns(header_row1, field_row1)
-            month_field_map2 = parse_month_field_columns(header_row2, field_row2)
+            month_field_map = parse_month_field_columns(header_row, field_row)
             
-            logger.info(f"Month field mapping for file 1: {month_field_map1}")
-            logger.info(f"Month field mapping for file 2: {month_field_map2}")
+            logger.info(f"Month field mapping: {month_field_map}")
             
             # Store all data rows
-            all_data1 = []
-            all_data2 = []
-            for row in reader1:
+            all_data = []
+            for row in reader:
                 if row and len(row) > 0 and row[0].strip():
-                    all_data1.append(row)
+                    all_data.append(row)
                     if row[0].strip().upper() == 'TOTAL':
                         break
             
-            for row in reader2:
-                if row and len(row) > 0 and row[0].strip():
-                    all_data2.append(row)
-                    if row[0].strip().upper() == 'TOTAL':
-                        break
+            # In create_multi_month_document, after reading header_row and field_row, determine the first and last month dynamically
+            months_in_file = [cell.strip().upper() for cell in header_row[2:] if cell.strip() and cell.strip().upper() not in ("TOTAL", "SR.NO.", "INITIALS")]
+            if months_in_file:
+                start_month = months_in_file[0]
+                end_month = months_in_file[-1]
+                month_range = f"{start_month}-{end_month}"
+            else:
+                month_range = ""
             
-            # Get common months from both files and sort them according to month_order
-            common_months = sorted(
-                set(month_field_map1.keys()) & set(month_field_map2.keys()),
-                key=lambda x: month_order.index(x) if x in month_order else float('inf')
-            )
-            
-            # Process each month in the correct order
-            for month_name in common_months:
-                if month_name in month_field_map1 and month_name in month_field_map2:
-                    # Process data from both files for this month
-                    month_file = os.path.join(month_folder, f"{month_name}_{file1_info['year_range']}.docx")
+            # Process each month
+            for month_name, columns in month_field_map.items():
+                if not all(key in columns for key in ['ALLOTTED', 'ENGAGED', 'GAP']):
+                    logger.warning(f"Skipping month {month_name} - missing columns: {columns}")
+                    continue
+                # If this is the TOTAL page, use 'TOTAL' for lookups but pass month_range for the Word placeholder
+                if month_name == 'TOTAL':
+                    total_file = os.path.join(month_folder, f"{file_info['original_std']}_TOTAL_{file_info['year_range']}.docx")
                     success = process_single_month(
                         template_path=template_path,
-                        month_name=month_name,
-                        data_rows1=all_data1,
-                        data_rows2=all_data2,
-                        columns1=month_field_map1[month_name],
-                        columns2=month_field_map2[month_name],
-                        file_info1=file1_info,
-                        file_info2=file2_info,
-                        output_path=month_file
+                        month_name=month_range,  # For Word placeholder
+                        data_rows=all_data,
+                        columns=month_field_map['TOTAL'],  # For data/column lookups
+                        file_info=file_info,
+                        output_path=total_file,
+                        month_field_map=month_field_map
                     )
                     if success:
-                        month_files.append(month_file)
+                        month_files.append(total_file)
+                    continue
+                # Process the month as usual
+                month_file = os.path.join(month_folder, f"{file_info['original_std']}_{month_name}_{file_info['year_range']}.docx")
+                success = process_single_month(
+                    template_path=template_path,
+                    month_name=month_name,
+                    data_rows=all_data,
+                    columns=columns,
+                    file_info=file_info,
+                    output_path=month_file,
+                    month_field_map=month_field_map
+                )
+                if success:
+                    month_files.append(month_file)
+            
+            # Create a text file with instructions on how to manually combine the files
+            if month_files:
+                combined_filename = f"{file_info['original_std']}_{file_info['year_range']}_term{file_info['term']}_all_months.docx"
+                combined_path = os.path.join(output_folder, combined_filename)
+                if WIN32COM_AVAILABLE:
+                    merge_with_win32com(month_files, combined_path)
+                else:
+                    instruction_file = os.path.join(output_folder, f"{combined_filename}_INSTRUCTIONS.txt")
+                    with open(instruction_file, 'w') as f:
+                        f.write("INSTRUCTIONS FOR COMBINING THE MONTH FILES\n")
+                        f.write("===========================================\n\n")
+                        f.write("Due to formatting issues when programmatically combining Word documents,\n")
+                        f.write("please follow these steps to combine the month files manually:\n\n")
+                        f.write("1. Open the first month file\n")
+                        f.write("2. For each additional month file:\n")
+                        f.write("   a. Place cursor at the end of the document\n")
+                        f.write("   b. Insert -> Page Break\n")
+                        f.write("   c. Insert -> Object -> Text from file\n")
+                        f.write("   d. Select the next month file\n")
+                        f.write("3. Save the combined document\n\n")
+                        f.write("Individual month files are located in the 'month_files' folder:\n\n")
+                        
+                        for i, file_path in enumerate(month_files, 1):
+                            f.write(f"{i}. {os.path.basename(file_path)}\n")
+                
+                logger.info(f"Created {len(month_files)} individual month files in the '{month_folder}' folder")
+                logger.info(f"Instructions for manually combining files written to {instruction_file}")
+            else:
+                logger.error("No month files were created")
     
     except Exception as e:
-        logger.error(f"Error processing files: {e}")
+        logger.error(f"Error processing file {csv_path}: {e}")
         return False
     
     return True
@@ -450,7 +465,7 @@ def process_excel_files(excel_folder="excel_copies", template_path="executive_su
             csv_path = convert_excel_to_csv(file_path)
             if csv_path:
                 try:
-                    create_multi_month_document(csv_path, csv_path, template_path, output_folder)
+                    create_multi_month_document(csv_path, template_path, output_folder)
                 finally:
                     try:
                         os.unlink(csv_path)
@@ -471,7 +486,7 @@ def process_single_excel_file(excel_path, template_path="executive_summary_templ
     csv_path = convert_excel_to_csv(excel_path)
     if csv_path:
         try:
-            create_multi_month_document(csv_path, csv_path, template_path, output_folder)
+            create_multi_month_document(csv_path, template_path, output_folder)
         finally:
             try:
                 os.unlink(csv_path)
@@ -549,36 +564,26 @@ def process_dual_excel_files(excel_path1, excel_path2, template_path="executive_
         if not os.path.exists(month_folder):
             os.makedirs(month_folder)
         
-        # Process both files together
-        logger.info("Processing both files together...")
-        create_multi_month_document(csv_path1, csv_path2, template_path, output_folder)
+        # Process first file
+        logger.info("Processing first file...")
+        create_multi_month_document(csv_path1, template_path, output_folder)
+        
+        # Process second file
+        logger.info("Processing second file...")
+        create_multi_month_document(csv_path2, template_path, output_folder)
         
         # Combine the files
         combined_filename = f"COMBINED_{file1_info['year_range']}_term{file1_info['term']}_all_months.docx"
         combined_path = os.path.join(output_folder, combined_filename)
         
-        # Get all month files and sort them by month order
-        month_order = ['JUNE', 'JULY', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC', 'JAN', 'FEB', 'MAR', 'APR', 'MAY']
+        # Get all month files
         month_files = []
-        total_file = None
-        
         for file in os.listdir(month_folder):
             if file.endswith('.docx'):
-                file_path = os.path.join(month_folder, file)
-                if file.startswith('TOTAL'):
-                    total_file = file_path
-                else:
-                    month_name = file.split('_')[0].upper()
-                    if month_name in month_order:
-                        month_files.append((month_order.index(month_name), file_path))
+                month_files.append(os.path.join(month_folder, file))
         
-        # Sort files by month order
-        month_files.sort(key=lambda x: x[0])
-        month_files = [x[1] for x in month_files]  # Extract just the file paths
-        
-        # Add TOTAL file at the end if it exists
-        if total_file:
-            month_files.append(total_file)
+        # Sort files to ensure correct order
+        month_files.sort()
         
         if WIN32COM_AVAILABLE:
             merge_with_win32com(month_files, combined_path)

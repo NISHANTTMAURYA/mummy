@@ -153,27 +153,26 @@ def parse_month_field_columns(header_row, field_row):
     
     return month_field_map
 
-def process_single_month(template_path, month_name, data_rows1, data_rows2, columns1, columns2, file_info1, file_info2, output_path):
+def process_single_month(template_path, month_name, data_rows1, data_rows2, columns1, columns2, file_info1, file_info2, output_path, all_months=None):
     """Process a single month and save to output path."""
     try:
         doc = Document(template_path)
         month_num = get_month_number(month_name)
         term_month_index = get_term_month_index(month_name, term=file_info1['term'])
         
-        # For TOTAL page, format the month name as "START-END"
-        if month_name.upper() == 'TOTAL':
-            # Get all months from the field maps
-            all_months = sorted(set(columns1.keys()) & set(columns2.keys()) - {'TOTAL'})
-            if all_months:
-                start_month = all_months[0]
-                end_month = all_months[-1]
-                month_name = f"{start_month}-{end_month}"
+        # For TOTAL page, format the month name as "START-END" for display only
+        display_month_name = month_name
+        if month_name.upper() == 'TOTAL' and all_months:
+            # Get the first and last months from the month field mappings
+            first_month = next(iter(columns1.keys()))
+            last_month = next(iter(reversed(columns1.keys())))
+            display_month_name = f"{first_month}-{last_month}"
         
         replacements = {
             "{{year}}": file_info1['year_range'],
             "{{act_mon}}": month_num,
             "{{term_mon}}": term_month_index,
-            "{{month}}": month_name,
+            "{{month}}": display_month_name,  # Use display_month_name here!
             "ES/00": f"ES/{file_info1['standard']}"
         }
         
@@ -209,74 +208,108 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
         else:
             field_map2 = columns2.get(month_name.upper(), columns2)
 
-        # Process data from both files
-        for data_idx, (data_row1, data_row2) in enumerate(zip(data_rows1, data_rows2)):
-            if not data_row1 or len(data_row1) < 2 or not data_row2 or len(data_row2) < 2:
-                continue
+        if month_name.upper() == 'TOTAL' and all_months:
+            # Find the TOTAL row in each data set
+            total_row1 = next((row for row in data_rows1 if row[0].strip().upper() == 'TOTAL'), None)
+            total_row2 = next((row for row in data_rows2 if row[0].strip().upper() == 'TOTAL'), None)
+            if total_row1 and total_row2:
+                table_row_idx = first_data_row
+                row = target_table.rows[table_row_idx]
+                # Fill SR.NO. and INITIALS (use data from first file)
+                if col_map.get('{{col_srno}}') is not None:
+                    row.cells[col_map['{{col_srno}}']].text = total_row1[0].strip()
+                if col_map.get('{{col_initials}}') is not None and len(total_row1) > 1:
+                    row.cells[col_map['{{col_initials}}']].text = total_row1[1].strip()
+                # Get indices for ALLOTTED, ENGAGED, GAP for both files
+                allotted_idx1 = field_map1.get('ALLOTTED')
+                engaged_idx1 = field_map1.get('ENGAGED')
+                gap_idx1 = field_map1.get('GAP')
+                allotted_idx2 = field_map2.get('ALLOTTED')
+                engaged_idx2 = field_map2.get('ENGAGED')
+                gap_idx2 = field_map2.get('GAP')
+                # Fill XI columns (FYJC data)
+                if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx1 is not None and len(total_row1) > allotted_idx1:
+                    row.cells[col_map['{{col_xi_allotted}}']].text = total_row1[allotted_idx1]
+                else:
+                    row.cells[col_map['{{col_xi_allotted}}']].text = '--'
+                if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx1 is not None and len(total_row1) > engaged_idx1:
+                    row.cells[col_map['{{col_xi_engaged}}']].text = total_row1[engaged_idx1]
+                else:
+                    row.cells[col_map['{{col_xi_engaged}}']].text = '--'
+                if col_map.get('{{col_xi_gap}}') is not None and gap_idx1 is not None and len(total_row1) > gap_idx1:
+                    row.cells[col_map['{{col_xi_gap}}']].text = total_row1[gap_idx1]
+                else:
+                    row.cells[col_map['{{col_xi_gap}}']].text = '--'
+                # Fill XII columns (SYJC data)
+                if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx2 is not None and len(total_row2) > allotted_idx2:
+                    row.cells[col_map['{{col_xii_allotted}}']].text = total_row2[allotted_idx2]
+                else:
+                    row.cells[col_map['{{col_xii_allotted}}']].text = '--'
+                if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx2 is not None and len(total_row2) > engaged_idx2:
+                    row.cells[col_map['{{col_xii_engaged}}']].text = total_row2[engaged_idx2]
+                else:
+                    row.cells[col_map['{{col_xii_engaged}}']].text = '--'
+                if col_map.get('{{col_xii_gap}}') is not None and gap_idx2 is not None and len(total_row2) > gap_idx2:
+                    row.cells[col_map['{{col_xii_gap}}']].text = total_row2[gap_idx2]
+            else:
+                    row.cells[col_map['{{col_xii_gap}}']].text = '--'
+        else:
+            # Process data from both files for regular months
+            for data_idx, (data_row1, data_row2) in enumerate(zip(data_rows1, data_rows2)):
+                if not data_row1 or len(data_row1) < 2 or not data_row2 or len(data_row2) < 2:
+                    continue
+                # For regular months, stop at TOTAL row
+                if month_name.upper() != 'TOTAL' and data_row1[0].strip().upper() == 'TOTAL':
+                    break
                 
-            # For TOTAL page, look for the row that starts with "TOTAL"
-            if month_name.upper() == 'TOTAL' and data_row1[0].strip().upper() != 'TOTAL':
-                continue
-            # For regular months, stop at TOTAL row
-            elif month_name.upper() != 'TOTAL' and data_row1[0].strip().upper() == 'TOTAL':
-                break
-
-            table_row_idx = first_data_row + data_idx
-            if table_row_idx >= len(target_table.rows):
-                logger.warning(f"Not enough rows in table for data row {data_idx+1}, adding row.")
-                target_table.add_row()
-            
-            row = target_table.rows[table_row_idx]
-
-            # Fill SR.NO. and INITIALS (use data from first file)
-            if col_map.get('{{col_srno}}') is not None:
-                row.cells[col_map['{{col_srno}}']].text = data_row1[0].strip()
-            if col_map.get('{{col_initials}}') is not None and len(data_row1) > 1:
-                row.cells[col_map['{{col_initials}}']].text = data_row1[1].strip()
-
-            # Get indices for ALLOTTED, ENGAGED, GAP for both files
-            allotted_idx1 = field_map1.get('ALLOTTED')
-            engaged_idx1 = field_map1.get('ENGAGED')
-            gap_idx1 = field_map1.get('GAP')
-            
-            allotted_idx2 = field_map2.get('ALLOTTED')
-            engaged_idx2 = field_map2.get('ENGAGED')
-            gap_idx2 = field_map2.get('GAP')
-
-            # Fill XI columns (FYJC data)
-            if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx1 is not None and len(data_row1) > allotted_idx1:
-                row.cells[col_map['{{col_xi_allotted}}']].text = data_row1[allotted_idx1]
-            else:
-                row.cells[col_map['{{col_xi_allotted}}']].text = '--'
-
-            if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx1 is not None and len(data_row1) > engaged_idx1:
-                row.cells[col_map['{{col_xi_engaged}}']].text = data_row1[engaged_idx1]
-            else:
-                row.cells[col_map['{{col_xi_engaged}}']].text = '--'
-
-            if col_map.get('{{col_xi_gap}}') is not None and gap_idx1 is not None and len(data_row1) > gap_idx1:
-                row.cells[col_map['{{col_xi_gap}}']].text = data_row1[gap_idx1]
-            else:
-                row.cells[col_map['{{col_xi_gap}}']].text = '--'
-
-            # Fill XII columns (SYJC data)
-            if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx2 is not None and len(data_row2) > allotted_idx2:
-                row.cells[col_map['{{col_xii_allotted}}']].text = data_row2[allotted_idx2]
-            else:
-                row.cells[col_map['{{col_xii_allotted}}']].text = '--'
-
-            if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx2 is not None and len(data_row2) > engaged_idx2:
-                row.cells[col_map['{{col_xii_engaged}}']].text = data_row2[engaged_idx2]
-            else:
-                row.cells[col_map['{{col_xii_engaged}}']].text = '--'
-
-            if col_map.get('{{col_xii_gap}}') is not None and gap_idx2 is not None and len(data_row2) > gap_idx2:
-                row.cells[col_map['{{col_xii_gap}}']].text = data_row2[gap_idx2]
-            else:
-                row.cells[col_map['{{col_xii_gap}}']].text = '--'
+                table_row_idx = first_data_row + data_idx
+                if table_row_idx >= len(target_table.rows):
+                    logger.warning(f"Not enough rows in table for data row {data_idx+1}, adding row.")
+                    target_table.add_row()
+                
+                row = target_table.rows[table_row_idx]
+                # Fill SR.NO. and INITIALS (use data from first file)
+                if col_map.get('{{col_srno}}') is not None:
+                    row.cells[col_map['{{col_srno}}']].text = data_row1[0].strip()
+                if col_map.get('{{col_initials}}') is not None and len(data_row1) > 1:
+                    row.cells[col_map['{{col_initials}}']].text = data_row1[1].strip()
+                
+                # Get indices for ALLOTTED, ENGAGED, GAP for both files
+                allotted_idx1 = field_map1.get('ALLOTTED')
+                engaged_idx1 = field_map1.get('ENGAGED')
+                gap_idx1 = field_map1.get('GAP')
+                allotted_idx2 = field_map2.get('ALLOTTED')
+                engaged_idx2 = field_map2.get('ENGAGED')
+                gap_idx2 = field_map2.get('GAP')
+                # Fill XI columns (FYJC data)
+                if col_map.get('{{col_xi_allotted}}') is not None and allotted_idx1 is not None and len(data_row1) > allotted_idx1:
+                    row.cells[col_map['{{col_xi_allotted}}']].text = data_row1[allotted_idx1]
+                else:
+                    row.cells[col_map['{{col_xi_allotted}}']].text = '--'
+                if col_map.get('{{col_xi_engaged}}') is not None and engaged_idx1 is not None and len(data_row1) > engaged_idx1:
+                    row.cells[col_map['{{col_xi_engaged}}']].text = data_row1[engaged_idx1]
+                else:
+                    row.cells[col_map['{{col_xi_engaged}}']].text = '--'
+                if col_map.get('{{col_xi_gap}}') is not None and gap_idx1 is not None and len(data_row1) > gap_idx1:
+                    row.cells[col_map['{{col_xi_gap}}']].text = data_row1[gap_idx1]
+                else:
+                    row.cells[col_map['{{col_xi_gap}}']].text = '--'
+                # Fill XII columns (SYJC data)
+                if col_map.get('{{col_xii_allotted}}') is not None and allotted_idx2 is not None and len(data_row2) > allotted_idx2:
+                    row.cells[col_map['{{col_xii_allotted}}']].text = data_row2[allotted_idx2]
+                else:
+                    row.cells[col_map['{{col_xii_allotted}}']].text = '--'
+                if col_map.get('{{col_xii_engaged}}') is not None and engaged_idx2 is not None and len(data_row2) > engaged_idx2:
+                    row.cells[col_map['{{col_xii_engaged}}']].text = data_row2[engaged_idx2]
+                else:
+                    row.cells[col_map['{{col_xii_engaged}}']].text = '--'
+                if col_map.get('{{col_xii_gap}}') is not None and gap_idx2 is not None and len(data_row2) > gap_idx2:
+                    row.cells[col_map['{{col_xii_gap}}']].text = data_row2[gap_idx2]
+                else:
+                    row.cells[col_map['{{col_xii_gap}}']].text = '--'
 
         doc.save(output_path)
-        logger.info(f"Processed {month_name} and saved to {output_path}")
+        logger.info(f"Processed {display_month_name} and saved to {output_path}")
         return True
     except Exception as e:
         logger.error(f"Error processing {month_name}: {e}")
@@ -380,24 +413,41 @@ def create_multi_month_document(csv_path1, csv_path2, template_path, output_fold
                 key=lambda x: month_order.index(x) if x in month_order else float('inf')
             )
             
+            # Prepare the list of months for the TOTAL page (exclude TOTAL itself)
+            all_months_for_total = [m for m in common_months if m != 'TOTAL']
+            
             # Process each month in the correct order
             for month_name in common_months:
                 if month_name in month_field_map1 and month_name in month_field_map2:
-                    # Process data from both files for this month
                     month_file = os.path.join(month_folder, f"{month_name}_{file1_info['year_range']}.docx")
+                if month_name == 'TOTAL':
                     success = process_single_month(
                         template_path=template_path,
-                        month_name=month_name,
-                        data_rows1=all_data1,
-                        data_rows2=all_data2,
-                        columns1=month_field_map1[month_name],
-                        columns2=month_field_map2[month_name],
-                        file_info1=file1_info,
-                        file_info2=file2_info,
-                        output_path=month_file
-                    )
-                    if success:
-                        month_files.append(month_file)
+                            month_name=month_name,
+                            data_rows1=all_data1,
+                            data_rows2=all_data2,
+                            columns1=month_field_map1[month_name],
+                            columns2=month_field_map2[month_name],
+                            file_info1=file1_info,
+                            file_info2=file2_info,
+                            output_path=month_file,
+                            all_months=all_months_for_total
+                        )
+                    else:
+                success = process_single_month(
+                    template_path=template_path,
+                    month_name=month_name,
+                            data_rows1=all_data1,
+                            data_rows2=all_data2,
+                            columns1=month_field_map1[month_name],
+                            columns2=month_field_map2[month_name],
+                            file_info1=file1_info,
+                            file_info2=file2_info,
+                    output_path=month_file,
+                            all_months=None
+                )
+                if success:
+                    month_files.append(month_file)
     
     except Exception as e:
         logger.error(f"Error processing files: {e}")

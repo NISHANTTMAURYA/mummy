@@ -160,20 +160,20 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
         month_num = get_month_number(month_name)
         term_month_index = get_term_month_index(month_name, term=file_info1['term'])
         
-        # For TOTAL page, format the month name as "START-END"
+        # For TOTAL page, format the month name as "START-END" for display only
+        display_month_name = month_name
         if month_name.upper() == 'TOTAL':
-            # Get all months from the field maps
             all_months = sorted(set(columns1.keys()) & set(columns2.keys()) - {'TOTAL'})
             if all_months:
                 start_month = all_months[0]
                 end_month = all_months[-1]
-                month_name = f"{start_month}-{end_month}"
+                display_month_name = f"{start_month}-{end_month}"
         
         replacements = {
             "{{year}}": file_info1['year_range'],
             "{{act_mon}}": month_num,
             "{{term_mon}}": term_month_index,
-            "{{month}}": month_name,
+            "{{month}}": display_month_name,  # Use display_month_name here!
             "ES/00": f"ES/{file_info1['standard']}"
         }
         
@@ -276,7 +276,7 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
                 row.cells[col_map['{{col_xii_gap}}']].text = '--'
 
         doc.save(output_path)
-        logger.info(f"Processed {month_name} and saved to {output_path}")
+        logger.info(f"Processed {display_month_name} and saved to {output_path}")
         return True
     except Exception as e:
         logger.error(f"Error processing {month_name}: {e}")

@@ -560,25 +560,15 @@ def process_dual_excel_files(excel_path1, excel_path2, template_path="executive_
         # Get all month files and sort them by month order
         month_order = ['JUNE', 'JULY', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC', 'JAN', 'FEB', 'MAR', 'APR', 'MAY']
         month_files = []
-        total_file = None
-        
         for file in os.listdir(month_folder):
             if file.endswith('.docx'):
-                file_path = os.path.join(month_folder, file)
-                if file.startswith('TOTAL'):
-                    total_file = file_path
-                else:
-                    month_name = file.split('_')[0].upper()
-                    if month_name in month_order:
-                        month_files.append((month_order.index(month_name), file_path))
+                month_name = file.split('_')[0].upper()
+                if month_name in month_order:
+                    month_files.append((month_order.index(month_name), os.path.join(month_folder, file)))
         
         # Sort files by month order
         month_files.sort(key=lambda x: x[0])
         month_files = [x[1] for x in month_files]  # Extract just the file paths
-        
-        # Add TOTAL file at the end if it exists
-        if total_file:
-            month_files.append(total_file)
         
         if WIN32COM_AVAILABLE:
             merge_with_win32com(month_files, combined_path)

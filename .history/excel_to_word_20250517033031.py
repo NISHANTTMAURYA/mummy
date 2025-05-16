@@ -153,27 +153,23 @@ def parse_month_field_columns(header_row, field_row):
     
     return month_field_map
 
-def process_single_month(template_path, month_name, data_rows1, data_rows2, columns1, columns2, file_info1, file_info2, output_path):
+def process_single_month(template_path, month_name, data_rows1, data_rows2, columns1, columns2, file_info1, file_info2, output_path, all_months=None):
     """Process a single month and save to output path."""
     try:
         doc = Document(template_path)
         month_num = get_month_number(month_name)
         term_month_index = get_term_month_index(month_name, term=file_info1['term'])
         
-        # For TOTAL page, format the month name as "START-END"
-        if month_name.upper() == 'TOTAL':
-            # Get all months from the field maps
-            all_months = sorted(set(columns1.keys()) & set(columns2.keys()) - {'TOTAL'})
-            if all_months:
-                start_month = all_months[0]
-                end_month = all_months[-1]
-                month_name = f"{start_month}-{end_month}"
+        # For TOTAL page, format the month name as "START-END" for display only
+        display_month_name = month_name
+        if month_name.upper() == 'TOTAL' and all_months:
+            display_month_name = f"{all_months[0]}-{all_months[-1]}"
         
         replacements = {
             "{{year}}": file_info1['year_range'],
             "{{act_mon}}": month_num,
             "{{term_mon}}": term_month_index,
-            "{{month}}": month_name,
+            "{{month}}": display_month_name,  # Use display_month_name here!
             "ES/00": f"ES/{file_info1['standard']}"
         }
         
@@ -276,7 +272,7 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
                 row.cells[col_map['{{col_xii_gap}}']].text = '--'
 
         doc.save(output_path)
-        logger.info(f"Processed {month_name} and saved to {output_path}")
+        logger.info(f"Processed {display_month_name} and saved to {output_path}")
         return True
     except Exception as e:
         logger.error(f"Error processing {month_name}: {e}")
@@ -380,22 +376,39 @@ def create_multi_month_document(csv_path1, csv_path2, template_path, output_fold
                 key=lambda x: month_order.index(x) if x in month_order else float('inf')
             )
             
+            # Prepare the list of months for the TOTAL page (exclude TOTAL itself)
+            all_months_for_total = [m for m in common_months if m != 'TOTAL']
+            
             # Process each month in the correct order
             for month_name in common_months:
                 if month_name in month_field_map1 and month_name in month_field_map2:
-                    # Process data from both files for this month
                     month_file = os.path.join(month_folder, f"{month_name}_{file1_info['year_range']}.docx")
-                    success = process_single_month(
-                        template_path=template_path,
-                        month_name=month_name,
-                        data_rows1=all_data1,
-                        data_rows2=all_data2,
-                        columns1=month_field_map1[month_name],
-                        columns2=month_field_map2[month_name],
-                        file_info1=file1_info,
-                        file_info2=file2_info,
-                        output_path=month_file
-                    )
+                    if month_name == 'TOTAL':
+                        success = process_single_month(
+                            template_path=template_path,
+                            month_name=month_name,
+                            data_rows1=all_data1,
+                            data_rows2=all_data2,
+                            columns1=month_field_map1[month_name],
+                            columns2=month_field_map2[month_name],
+                            file_info1=file1_info,
+                            file_info2=file2_info,
+                            output_path=month_file,
+                            all_months=all_months_for_total
+                        )
+                    else:
+                        success = process_single_month(
+                            template_path=template_path,
+                            month_name=month_name,
+                            data_rows1=all_data1,
+                            data_rows2=all_data2,
+                            columns1=month_field_map1[month_name],
+                            columns2=month_field_map2[month_name],
+                            file_info1=file1_info,
+                            file_info2=file2_info,
+                            output_path=month_file,
+                            all_months=None
+                        )
                     if success:
                         month_files.append(month_file)
     
