@@ -943,8 +943,8 @@ class CopyPage(ctk.CTkFrame):
         
         ctk.CTkLabel(title_frame, text="✨", font=ctk.CTkFont(size=28)).grid(row=0, column=0, padx=(0, 10))
         title = ctk.CTkLabel(title_frame, text="Create Yearly Excel Copy", 
-                           font=ctk.CTkFont(size=24, weight="bold", family="Arial"),
-                           text_color="#ffffff")  # Always white for better visibility
+                          font=ctk.CTkFont(size=24, weight="bold", family="Arial"),
+                          text_color="#ffffff")  # Always white for better visibility
         title.grid(row=0, column=1, sticky="w")
         ctk.CTkLabel(title_frame, text="✨", font=ctk.CTkFont(size=28)).grid(row=0, column=2, padx=(10, 0))
 
@@ -955,19 +955,19 @@ class CopyPage(ctk.CTkFrame):
 
         # Year entry with cute label
         year_label = ctk.CTkLabel(entry_frame, 
-                                text="📅 Year Range:", 
-                                font=ctk.CTkFont(size=16, weight="bold", family="Arial"),
-                                text_color="#ffffff")  # Always white for better visibility
+                               text="📅 Year Range:", 
+                               font=ctk.CTkFont(size=16, weight="bold", family="Arial"),
+                               text_color="#ffffff")  # Always white for better visibility
         year_label.grid(row=0, column=0, padx=20, pady=(20, 0), sticky="w")
         
         self.year_entry = ctk.CTkEntry(entry_frame, 
-                                     placeholder_text="Enter year range (e.g. 2024-2025)", 
-                                     font=ctk.CTkFont(size=16, family="Arial"), 
-                                     width=300,
-                                     height=40,
-                                     fg_color=self.colors["input_bg"],
-                                     border_color=self.colors["border"],
-                                     corner_radius=10)
+                                    placeholder_text="Enter year range (e.g. 2024-2025)", 
+                                    font=ctk.CTkFont(size=16, family="Arial"), 
+                                    width=300,
+                                    height=40,
+                                    fg_color=self.colors["input_bg"],
+                                    border_color=self.colors["border"],
+                                    corner_radius=10)
         self.year_entry.grid(row=1, column=0, padx=20, pady=(5, 20), sticky="w")
         
         # Add term selection dropdown with cute styling
@@ -975,25 +975,25 @@ class CopyPage(ctk.CTkFrame):
         term_frame.grid(row=2, column=0, padx=20, pady=(0, 20), sticky="w")
         
         ctk.CTkLabel(term_frame, 
-                   text="📘 Select Term:", 
-                   font=ctk.CTkFont(size=16, weight="bold", family="Arial"),
-                   text_color="#ffffff").grid(row=0, column=0, sticky="w", padx=(0, 10))
+                  text="📘 Select Term:", 
+                  font=ctk.CTkFont(size=16, weight="bold", family="Arial"),
+                  text_color="#ffffff").grid(row=0, column=0, sticky="w", padx=(0, 10))
         
         self.term_var = ctk.StringVar(value="term1")
         self.term_dropdown = ctk.CTkOptionMenu(term_frame,
-                                             values=["term1", "term2"],
-                                             variable=self.term_var,
-                                             width=150,
-                                             height=40,
-                                             font=ctk.CTkFont(size=14, family="Arial"),
-                                             fg_color=self.colors["dropdown_bg"],
-                                             button_color=self.colors["accent"],
-                                             button_hover_color=self.colors["accent_hover"],
-                                             dropdown_fg_color=self.colors["dropdown_bg"],
-                                             dropdown_hover_color=self.colors["dropdown_hover"],
-                                             dropdown_font=ctk.CTkFont(size=14, family="Arial"),
-                                             corner_radius=10,
-                                             text_color="#ffffff")  # Always white for better visibility
+                                            values=["term1", "term2"],
+                                            variable=self.term_var,
+                                            width=150,
+                                            height=40,
+                                            font=ctk.CTkFont(size=14, family="Arial"),
+                                            fg_color=self.colors["dropdown_bg"],
+                                            button_color=self.colors["accent"],
+                                            button_hover_color=self.colors["accent_hover"],
+                                            dropdown_fg_color=self.colors["dropdown_bg"],
+                                            dropdown_hover_color=self.colors["dropdown_hover"],
+                                            dropdown_font=ctk.CTkFont(size=14, family="Arial"),
+                                            corner_radius=10,
+                                            text_color="#ffffff")  # Always white for better visibility
         self.term_dropdown.grid(row=0, column=1, sticky="w", padx=(10, 0))
         
         # Add standard selection dropdown with cute styling
@@ -1001,45 +1001,45 @@ class CopyPage(ctk.CTkFrame):
         std_frame.grid(row=3, column=0, padx=20, pady=(0, 20), sticky="w")
         
         ctk.CTkLabel(std_frame, 
-                   text="🎓 Select Standard:", 
-                   font=ctk.CTkFont(size=16, weight="bold", family="Arial"),
-                   text_color="#ffffff").grid(row=0, column=0, sticky="w", padx=(0, 10))
+                  text="🎓 Select Standard:", 
+                  font=ctk.CTkFont(size=16, weight="bold", family="Arial"),
+                  text_color="#ffffff").grid(row=0, column=0, sticky="w", padx=(0, 10))
         
         self.std_var = ctk.StringVar(value="FYJC")
         self.std_dropdown = ctk.CTkOptionMenu(std_frame,
-                                             values=["FYJC", "SYJC"],
-                                             variable=self.std_var,
-                                             width=150,
-                                             height=40,
-                                             font=ctk.CTkFont(size=14, family="Arial"),
-                                             fg_color=self.colors["dropdown_bg"],
-                                             button_color=self.colors["accent"],
-                                             button_hover_color=self.colors["accent_hover"],
-                                             dropdown_fg_color=self.colors["dropdown_bg"],
-                                             dropdown_hover_color=self.colors["dropdown_hover"],
-                                             dropdown_font=ctk.CTkFont(size=14, family="Arial"),
-                                             corner_radius=10,
-                                             text_color="#ffffff")  # Always white for better visibility
+                                            values=["FYJC", "SYJC"],
+                                            variable=self.std_var,
+                                            width=150,
+                                            height=40,
+                                            font=ctk.CTkFont(size=14, family="Arial"),
+                                            fg_color=self.colors["dropdown_bg"],
+                                            button_color=self.colors["accent"],
+                                            button_hover_color=self.colors["accent_hover"],
+                                            dropdown_fg_color=self.colors["dropdown_bg"],
+                                            dropdown_hover_color=self.colors["dropdown_hover"],
+                                            dropdown_font=ctk.CTkFont(size=14, family="Arial"),
+                                            corner_radius=10,
+                                            text_color="#ffffff")  # Always white for better visibility
         self.std_dropdown.grid(row=0, column=1, sticky="w", padx=(10, 0))
         
         # Copy button with cute styling
         self.copy_button = ctk.CTkButton(entry_frame, 
-                                       text="📋 Create Copy", 
-                                       command=self.create_copy, 
-                                       font=ctk.CTkFont(size=16, weight="bold", family="Arial"), 
-                                       width=150,
-                                       height=45,
-                                       fg_color=self.colors["accent"],
-                                       hover_color=self.colors["accent_hover"],
-                                       corner_radius=15,
-                                       text_color="#ffffff")  # Always white for better visibility
+                                      text="📋 Create Copy", 
+                                      command=self.create_copy, 
+                                      font=ctk.CTkFont(size=16, weight="bold", family="Arial"), 
+                                      width=150,
+                                      height=45,
+                                      fg_color=self.colors["accent"],
+                                      hover_color=self.colors["accent_hover"],
+                                      corner_radius=15,
+                                      text_color="#ffffff")  # Always white for better visibility
         self.copy_button.grid(row=1, column=1, rowspan=2, padx=20, pady=20, sticky="e")
         
         # Status label with cute styling
         self.status_label = ctk.CTkLabel(entry_frame, 
-                                       text="", 
-                                       font=ctk.CTkFont(size=14, family="Arial"),
-                                       text_color="#ffffff")  # Will be changed when displaying messages
+                                      text="", 
+                                      font=ctk.CTkFont(size=14, family="Arial"),
+                                      text_color="#ffffff")  # Will be changed when displaying messages
         self.status_label.grid(row=3, column=1, sticky="w", padx=20, pady=(0, 20))
 
         # --- Bottom: Available Copies List ---
@@ -1055,9 +1055,9 @@ class CopyPage(ctk.CTkFrame):
         
         ctk.CTkLabel(list_title_frame, text="📚", font=ctk.CTkFont(size=28)).grid(row=0, column=0, padx=(0, 10))
         list_title = ctk.CTkLabel(list_title_frame, 
-                                text="Available Copies:", 
-                                font=ctk.CTkFont(size=20, weight="bold", family="Arial"),
-                                text_color="#ffffff")  # Always white for better visibility
+                               text="Available Copies:", 
+                               font=ctk.CTkFont(size=20, weight="bold", family="Arial"),
+                               text_color="#ffffff")  # Always white for better visibility
         list_title.grid(row=0, column=1, sticky="w")
         
         # Add filter options
@@ -1067,86 +1067,86 @@ class CopyPage(ctk.CTkFrame):
         
         # Create filter dropdowns
         filter_label = ctk.CTkLabel(filter_frame, 
-                                  text="🔍 Filter by:", 
-                                  font=ctk.CTkFont(size=14, weight="bold"),
-                                  text_color="#ffffff")
+                                 text="🔍 Filter by:", 
+                                 font=ctk.CTkFont(size=14, weight="bold"),
+                                 text_color="#ffffff")
         filter_label.grid(row=0, column=0, padx=(15, 5), pady=10, sticky="e")
         
         # Year filter
         self.year_filter_var = ctk.StringVar(value="All Years")
         self.year_filter = ctk.CTkOptionMenu(filter_frame,
-                                           values=["All Years"],
-                                           variable=self.year_filter_var,
-                                           width=100,  # Reduced width
-                                           height=30,
-                                           font=ctk.CTkFont(size=12),
-                                           fg_color=self.colors["dropdown_bg"],
-                                           button_color=self.colors["accent"],
-                                           button_hover_color=self.colors["accent_hover"],
-                                           dropdown_fg_color=self.colors["dropdown_bg"],
-                                           dropdown_hover_color=self.colors["dropdown_hover"],
-                                           corner_radius=8,
-                                           command=self.apply_filters)
+                                          values=["All Years"],
+                                          variable=self.year_filter_var,
+                                          width=100,  # Reduced width
+                                          height=30,
+                                          font=ctk.CTkFont(size=12),
+                                          fg_color=self.colors["dropdown_bg"],
+                                          button_color=self.colors["accent"],
+                                          button_hover_color=self.colors["accent_hover"],
+                                          dropdown_fg_color=self.colors["dropdown_bg"],
+                                          dropdown_hover_color=self.colors["dropdown_hover"],
+                                          corner_radius=8,
+                                          command=self.apply_filters)
         self.year_filter.grid(row=0, column=1, padx=(5, 5), pady=10, sticky="e")
         
         # Term filter
         self.term_filter_var = ctk.StringVar(value="All Terms")
         self.term_filter = ctk.CTkOptionMenu(filter_frame,
-                                           values=["All Terms", "term1", "term2"],
-                                           variable=self.term_filter_var,
-                                           width=100,  # Reduced width
-                                           height=30,
-                                           font=ctk.CTkFont(size=12),
-                                           fg_color=self.colors["dropdown_bg"],
-                                           button_color=self.colors["accent"],
-                                           button_hover_color=self.colors["accent_hover"],
-                                           dropdown_fg_color=self.colors["dropdown_bg"],
-                                           dropdown_hover_color=self.colors["dropdown_hover"],
-                                           corner_radius=8,
-                                           command=self.apply_filters)
+                                          values=["All Terms", "term1", "term2"],
+                                          variable=self.term_filter_var,
+                                          width=100,  # Reduced width
+                                          height=30,
+                                          font=ctk.CTkFont(size=12),
+                                          fg_color=self.colors["dropdown_bg"],
+                                          button_color=self.colors["accent"],
+                                          button_hover_color=self.colors["accent_hover"],
+                                          dropdown_fg_color=self.colors["dropdown_bg"],
+                                          dropdown_hover_color=self.colors["dropdown_hover"],
+                                          corner_radius=8,
+                                          command=self.apply_filters)
         self.term_filter.grid(row=0, column=2, padx=(5, 5), pady=10, sticky="e")
         
         # Standard filter
         self.std_filter_var = ctk.StringVar(value="All Standards")
         self.std_filter = ctk.CTkOptionMenu(filter_frame,
-                                           values=["All Standards", "FYJC", "SYJC"],
-                                           variable=self.std_filter_var,
-                                           width=100,  # Reduced width
-                                           height=30,
-                                           font=ctk.CTkFont(size=12),
-                                           fg_color=self.colors["dropdown_bg"],
-                                           button_color=self.colors["accent"],
-                                           button_hover_color=self.colors["accent_hover"],
-                                           dropdown_fg_color=self.colors["dropdown_bg"],
-                                           dropdown_hover_color=self.colors["dropdown_hover"],
-                                           corner_radius=8,
-                                           command=self.apply_filters)
+                                          values=["All Standards", "FYJC", "SYJC"],
+                                          variable=self.std_filter_var,
+                                          width=100,  # Reduced width
+                                          height=30,
+                                          font=ctk.CTkFont(size=12),
+                                          fg_color=self.colors["dropdown_bg"],
+                                          button_color=self.colors["accent"],
+                                          button_hover_color=self.colors["accent_hover"],
+                                          dropdown_fg_color=self.colors["dropdown_bg"],
+                                          dropdown_hover_color=self.colors["dropdown_hover"],
+                                          corner_radius=8,
+                                          command=self.apply_filters)
         self.std_filter.grid(row=0, column=3, padx=(5, 5), pady=10, sticky="e")
         
         # Reset button
         reset_btn = ctk.CTkButton(filter_frame,
-                                 text="↺ Reset",
-                                 width=70,  # Reduced width
-                                 height=30,
-                                 font=ctk.CTkFont(size=12, weight="bold"),
-                                 fg_color=self.colors["accent"],
-                                 hover_color=self.colors["accent_hover"],
-                                 corner_radius=8,
-                                 command=self.reset_filters)
+                                text="↺ Reset",
+                                width=70,  # Reduced width
+                                height=30,
+                                font=ctk.CTkFont(size=12, weight="bold"),
+                                fg_color=self.colors["accent"],
+                                hover_color=self.colors["accent_hover"],
+                                corner_radius=8,
+                                command=self.reset_filters)
         reset_btn.grid(row=0, column=5, padx=(5, 15), pady=10, sticky="e")
 
         # Create a container for the scrollable frame with proper border
         scroll_container = ctk.CTkFrame(list_frame, fg_color="transparent", border_width=2, 
-                                      border_color=self.colors["border"], corner_radius=15)
+                                     border_color=self.colors["border"], corner_radius=15)
         scroll_container.grid(row=2, column=0, sticky="nsew", padx=20, pady=(0, 10))
         scroll_container.grid_columnconfigure(0, weight=1)
         scroll_container.grid_rowconfigure(0, weight=1)
         
         # Scrollable frame for file list with cute styling
         self.scrollable_frame = ctk.CTkScrollableFrame(scroll_container, 
-                                                     fg_color=self.colors["bg_secondary"], 
-                                                     corner_radius=15,
-                                                     border_width=0)
+                                                    fg_color=self.colors["bg_secondary"], 
+                                                    corner_radius=15,
+                                                    border_width=0)
         self.scrollable_frame.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
         self.scrollable_frame.grid_columnconfigure(0, weight=1)
         
@@ -1156,460 +1156,24 @@ class CopyPage(ctk.CTkFrame):
         
         for i, emoji in enumerate(["💗", "📊", "💗"]):
             ctk.CTkLabel(deco_frame, 
-                       text=emoji, 
-                       font=ctk.CTkFont(size=20)).grid(row=0, column=i, padx=20)
+                      text=emoji, 
+                      font=ctk.CTkFont(size=20)).grid(row=0, column=i, padx=20)
         
         # Initialize
         self.all_files = []
+        
+        # Initialize filter values before loading files
+        self.years_found = set()
+        self.terms_found = set(["term1", "term2"])
+        self.standards_found = set(["FYJC", "SYJC"])
+        
+        # Load files and initialize filters
         self.refresh_file_list()
         self.new_file_path = None
 
     def update_colors(self):
         """Set color scheme based on appearance mode"""
         if ctk.get_appearance_mode() == "Dark":
-            self.colors = {
-                "bg_primary": "#2d2438",  # Dark purple background
-                "bg_secondary": "#332b40",  # Medium dark purple
-                "card_bg": "#3a2b4a",  # Medium purple for cards
-                "accent": "#b76edc",  # Bright purple accent
-                "accent_hover": "#c78ae8",  # Lighter purple for hover
-                "text_primary": "#e6e6e6",  # Light gray for text
-                "dropdown_bg": "#3a2b4a",  # Medium purple for dropdown
-                "dropdown_hover": "#473960",  # Slightly lighter purple for hover
-                "input_bg": "#3a2b4a",  # Medium purple for input
-                "border": "#b76edc",  # Bright purple for borders
-                "file_bg": "#473960",  # Light purple for file rows
-                "file_hover": "#524372",  # Lighter purple for file row hover
-                "tree_bg": "#251f30",  # Darker purple for tree
-                "tree_even": "#2d2438",  # Dark purple
-                "tree_odd": "#332b40",  # Medium dark purple
-                "tree_header": "#b76edc"  # Bright purple for headers
-            }
-        else:
-            self.colors = {
-                "bg_primary": "#fff5f9",  # Very light pink background
-                "bg_secondary": "#fff0f5",  # Light pink
-                "card_bg": "#ffebf2",  # Lighter pink for cards
-                "accent": "#ffacc7",  # Medium pink accent
-                "accent_hover": "#ff85a1",  # Darker pink for hover
-                "text_primary": "#4a4a4a",  # Dark gray for text
-                "dropdown_bg": "#ffebf2",  # Lighter pink for dropdown
-                "dropdown_hover": "#ffd6e0",  # Medium light pink for hover
-                "input_bg": "#ffebf2",  # Lighter pink for input
-                "border": "#ffacc7",  # Medium pink for borders
-                "file_bg": "#ffd6e0",  # Medium light pink for file rows
-                "file_hover": "#ffc1d5",  # Slightly darker pink for file row hover
-                "tree_bg": "#fff5f9",  # Very light pink for tree
-                "tree_even": "#fff0f5",  # Light pink
-                "tree_odd": "#ffebf2",  # Lighter pink
-                "tree_header": "#ffacc7"  # Medium pink for headers
-            }
-
-    def create_copy(self):
-        year = self.year_entry.get().strip()
-        if not year or not self._validate_year(year):
-            self.status_label.configure(text="Please enter a valid year range (e.g. 2024-2025)", text_color="red")
-            return
-            
-        # Get selected term - exact sheet name as it appears in Excel
-        term = self.term_var.get()  # Now directly "term1" or "term2"
-        
-        # Get selected standard
-        std = self.std_var.get()  # "FYJC" or "SYJC"
-        
-        os.makedirs("excel_copies", exist_ok=True)
-        new_file = f"excel_copies/iso_excel_{year}_{term}_{std}.xlsx"
-        
-        try:
-            import openpyxl
-            
-            # Open the source file
-            src_wb = openpyxl.load_workbook("iso_excel.xlsx")
-            
-            # Check if the term sheet exists
-            if term not in src_wb.sheetnames:
-                self.status_label.configure(text=f"Error: Sheet '{term}' not found in template", text_color="red")
-                return
-                
-            # Create a new workbook
-            dst_wb = openpyxl.Workbook()
-            
-            # Get the source sheet by name (exactly as it appears in Excel)
-            src_sheet = src_wb[term]
-            
-            # Get destination default sheet
-            dst_sheet = dst_wb.active
-            dst_sheet.title = term
-            
-            # Copy cell values, styles, merged cells, etc.
-            for row in src_sheet.rows:
-                for cell in row:
-                    dst_cell = dst_sheet.cell(row=cell.row, column=cell.column)
-                    dst_cell.value = cell.value
-                    if cell.has_style:
-                        dst_cell.font = copy(cell.font)
-                        dst_cell.border = copy(cell.border)
-                        dst_cell.fill = copy(cell.fill)
-                        dst_cell.number_format = cell.number_format
-                        dst_cell.protection = copy(cell.protection)
-                        dst_cell.alignment = copy(cell.alignment)
-            
-            # Copy column dimensions
-            for col, width in src_sheet.column_dimensions.items():
-                dst_sheet.column_dimensions[col].width = width.width
-                
-            # Copy row dimensions
-            for row, height in src_sheet.row_dimensions.items():
-                dst_sheet.row_dimensions[row].height = height.height
-                
-            # Copy merged cells
-            for merged_cell_range in src_sheet.merged_cells.ranges:
-                dst_sheet.merge_cells(str(merged_cell_range))
-            
-            # Add standard information at the bottom of the sheet
-            # First, find the last row with data
-            last_row = dst_sheet.max_row
-            
-            # Add a small gap (1 row)
-            std_row = last_row + 2
-            
-            # Add standard info with proper styling
-            std_info_cell = dst_sheet.cell(row=std_row, column=1)
-            std_info_cell.value = f"Standard: {std} ({self._std_label_map(std)})"
-            
-            # Style the standard information cell
-            std_info_cell.font = openpyxl.styles.Font(name='Arial', size=10, bold=True)
-            std_info_cell.alignment = openpyxl.styles.Alignment(horizontal='left')
-            
-            # Create a border for the standard information
-            thin_border = openpyxl.styles.Border(
-                left=openpyxl.styles.Side(style='thin'),
-                right=openpyxl.styles.Side(style='thin'),
-                top=openpyxl.styles.Side(style='thin'),
-                bottom=openpyxl.styles.Side(style='thin')
-            )
-            std_info_cell.border = thin_border
-            
-            # Add a light fill color
-            if std == "FYJC":
-                # Light purple for FYJC
-                std_info_cell.fill = openpyxl.styles.PatternFill(start_color="E6E6FA", end_color="E6E6FA", fill_type="solid")
-            else:
-                # Light pink for SYJC
-                std_info_cell.fill = openpyxl.styles.PatternFill(start_color="FFE6E6", end_color="FFE6E6", fill_type="solid")
-            
-            # Save the workbook
-            dst_wb.save(new_file)
-            
-            # Display success with cute emojis
-            self.status_label.configure(text=f"✅ Copy created for {std}: {new_file}", text_color="green")
-            self.new_file_path = os.path.abspath(new_file)
-            self.refresh_file_list()
-            
-        except Exception as e:
-            self.status_label.configure(text=f"❌ Error: {e}", text_color="red")
-    
-    def _std_label_map(self, std):
-        """Convert standard code to descriptive text"""
-        if std == "FYJC":
-            return "11th Standard"
-        elif std == "SYJC":
-            return "12th Standard"
-        return ""
-
-    def refresh_file_list(self):
-        """Refresh the list of available Excel files, filtering out system files."""
-        # Update colors in case appearance mode changed
-        self.update_colors()
-        
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
-        
-        # Get all files first (without filtering)
-        self.all_files = []
-        available_years = set(["All Years"])
-        available_terms = set(["All Terms"])
-        available_stds = set(["All Standards"])
-        
-        if os.path.exists("excel_copies"):
-            # Get only valid Excel files, filtering out system files and temp files
-            all_files = os.listdir("excel_copies")
-            excel_files = [f for f in all_files if (
-                f.endswith(".xlsx") and  # Only Excel files
-                not f.startswith("~") and  # Not temp files
-                not f.startswith("$") and  # Not system files
-                not f.startswith(".")  # Not hidden files
-            )]
-            
-            # Extract metadata from filenames for filtering
-            for fname in excel_files:
-                file_info = self._parse_filename(fname)
-                self.all_files.append((fname, file_info))
-                
-                # Collect available filter options
-                if file_info["year"]:
-                    available_years.add(file_info["year"])
-                if file_info["term"]:
-                    available_terms.add(file_info["term"])
-                if file_info["std"]:
-                    available_stds.add(file_info["std"])
-        
-        # Update filter dropdown options
-        self.year_filter.configure(values=sorted(list(available_years)))
-        self.term_filter.configure(values=sorted(list(available_terms)))
-        self.std_filter.configure(values=sorted(list(available_stds)))
-        
-        # Apply current filters
-        self._display_filtered_files()
-    
-    def _display_filtered_files(self):
-        """Display files based on current filter settings"""
-        # Get current filter values
-        year_filter = self.year_filter_var.get()
-        term_filter = self.term_filter_var.get()
-        std_filter = self.std_filter_var.get()
-        
-        # Clear current display
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
-        
-        # Apply filters
-        filtered_files = []
-        for fname, info in self.all_files:
-            # Check if the file matches all active filters
-            year_match = (year_filter == "All Years" or info["year"] == year_filter)
-            term_match = (term_filter == "All Terms" or info["term"] == term_filter)
-            std_match = (std_filter == "All Standards" or info["std"] == std_filter)
-            
-            if year_match and term_match and std_match:
-                filtered_files.append((fname, info))
-        
-        # Display the filtered files
-        if not filtered_files:
-            no_files_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
-            no_files_frame.grid(row=0, column=0, sticky="ew", pady=20, padx=20)
-            
-            # Add a cute empty state message with emoji
-            ctk.CTkLabel(no_files_frame, 
-                        text="📭", 
-                        font=ctk.CTkFont(size=40)).grid(row=0, column=0, pady=(20, 10))
-            
-            filter_message = "matching your filters" if year_filter != "All Years" or term_filter != "All Terms" or std_filter != "All Standards" else "found"
-            ctk.CTkLabel(no_files_frame, 
-                        text=f"No copies {filter_message}.", 
-                        font=ctk.CTkFont(size=18, weight="bold"),
-                        text_color=self.colors["accent"]).grid(row=1, column=0, pady=(10, 20))
-        else:
-            # Configure the scrollable frame
-            self.scrollable_frame.grid_columnconfigure(0, weight=1)
-            
-            # Create a parent frame for all file items to ensure proper layout
-            files_container = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
-            files_container.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-            files_container.grid_columnconfigure(0, weight=1)
-            
-            for i, (fname, info) in enumerate(sorted(filtered_files), start=0):
-                file_path = os.path.abspath(os.path.join("excel_copies", fname))
-                
-                # Create a compact file row with hover effect
-                row_frame = ctk.CTkFrame(files_container, 
-                                       fg_color=self.colors["file_bg"], 
-                                       corner_radius=10)
-                row_frame.grid(row=i, column=0, sticky="ew", pady=3, padx=5)  # Reduced padding
-                
-                # Configure row layout
-                row_frame.grid_columnconfigure(0, weight=0)  # File icon
-                row_frame.grid_columnconfigure(1, weight=0)  # Filename
-                row_frame.grid_columnconfigure(2, weight=1)  # Badges (expand to push button right)
-                row_frame.grid_columnconfigure(3, weight=0)  # Button fixed size
-                
-                # File icon - more compact
-                file_icon = ctk.CTkLabel(row_frame, 
-                                      text="📄", 
-                                      font=ctk.CTkFont(size=18))
-                file_icon.grid(row=0, column=0, padx=(8, 5), pady=6, sticky="w")
-                
-                # Filename - more compact
-                short_name = self._shorten_filename(fname)
-                file_name = ctk.CTkLabel(row_frame, 
-                                       text=short_name, 
-                                       font=ctk.CTkFont(size=14, weight="bold"),
-                                       text_color=self.colors["text_primary"])
-                file_name.grid(row=0, column=1, padx=(0, 8), pady=6, sticky="w")
-                
-                # Badges container - compact horizontal layout
-                badges_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-                badges_frame.grid(row=0, column=2, padx=0, pady=6, sticky="w")
-                
-                # Add badges in a row
-                badge_idx = 0
-                
-                if info["year"]:
-                    year_badge = self._create_badge(badges_frame, f"{info['year']}", "#3a2b4a")
-                    year_badge.grid(row=0, column=badge_idx, padx=(0, 3))
-                    badge_idx += 1
-                
-                if info["term"]:
-                    term_text = info["term"].replace("term", "T")  # Shorter text
-                    term_badge = self._create_badge(badges_frame, term_text, "#473960")
-                    term_badge.grid(row=0, column=badge_idx, padx=(0, 3))
-                    badge_idx += 1
-                
-                if info["std"]:
-                    std_bg = "#E6E6FA" if info["std"] == "FYJC" else "#FFE6E6"
-                    std_badge = self._create_badge(badges_frame, info["std"], std_bg, text_color="#333333")
-                    std_badge.grid(row=0, column=badge_idx, padx=(0, 3))
-                
-                # Open button - more compact
-                open_btn = ctk.CTkButton(row_frame, 
-                                       text="Open", 
-                                       width=60,  # Smaller button
-                                       height=24,
-                                       font=ctk.CTkFont(size=12, weight="bold"),
-                                       fg_color=self.colors["accent"],
-                                       hover_color=self.colors["accent_hover"],
-                                       corner_radius=8,
-                                       command=lambda p=file_path: webbrowser.open(f"file://{p}"))
-                open_btn.grid(row=0, column=3, padx=(5, 8), pady=6, sticky="e")
-                
-                # Create highlight effect on hover
-                def on_enter(e, frame=row_frame):
-                    frame.configure(fg_color=self.colors["file_hover"])
-                    
-                def on_leave(e, frame=row_frame):
-                    frame.configure(fg_color=self.colors["file_bg"])
-                    
-                row_frame.bind("<Enter>", on_enter)
-                row_frame.bind("<Leave>", on_leave)
-    
-    def _parse_filename(self, filename):
-        """Extract year, term and standard information from filename"""
-        info = {
-            "year": "",
-            "term": "",
-            "std": ""
-        }
-        
-        # Example filename format: iso_excel_2024-2025_term1_FYJC.xlsx
-        parts = filename.replace(".xlsx", "").split("_")
-        
-        # Extract year
-        for part in parts:
-            if "-" in part and part.startswith("20"):
-                info["year"] = part
-                break
-        
-        # Extract term - look for exact term matching
-        if "_term1" in filename:
-            info["term"] = "term1"
-        elif "_term2" in filename:
-            info["term"] = "term2"
-        
-        # Extract standard - look for exact std matching
-        if "_FYJC" in filename:
-            info["std"] = "FYJC"
-        elif "_SYJC" in filename:
-            info["std"] = "SYJC"
-        
-        return info
-    
-    def _shorten_filename(self, filename):
-        """Create a shorter display version of the filename"""
-        # Remove the common prefix
-        if filename.startswith("iso_excel_"):
-            filename = filename[10:]
-        # Remove .xlsx extension
-        if filename.endswith(".xlsx"):
-            filename = filename[:-5]
-        return filename
-    
-    def _create_badge(self, parent, text, bg_color, text_color="#ffffff"):
-        """Create a small badge with metadata"""
-        badge = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=5)  # Smaller radius
-        
-        ctk.CTkLabel(
-            badge,
-            text=text,
-            font=ctk.CTkFont(size=10),  # Smaller font
-            text_color=text_color,
-            padx=4,  # Reduced padding
-            pady=0
-        ).pack(padx=2, pady=1)  # Reduced padding
-        
-        return badge
-    
-    def apply_filters(self, value=None):
-        """Apply filters to the file list"""
-        # Update display based on current filter values
-        self._display_filtered_files()
-    
-    def reset_filters(self):
-        """Reset all filters to default values"""
-        self.year_filter_var.set("All Years")
-        self.term_filter_var.set("All Terms")
-        self.std_filter_var.set("All Standards")
-        # Apply the reset filters
-        self._display_filtered_files()
-
-    def _validate_year(self, year):
-        import re
-        return re.match(r"^20\d{2}-20\d{2}$", year)
-
-class SplashScreen(ctk.CTkToplevel):
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
-        self.alpha = 0.0  # Start fully transparent
-        
-        # Set up the splash window
-        self.overrideredirect(True)  # No window decorations
-        self.wm_attributes("-topmost", True)  # Keep on top
-        self.attributes("-alpha", self.alpha)  # Set initial transparency
-        
-        # Calculate position (center on screen)
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        splash_width = 650
-        splash_height = 450
-        x = (screen_width - splash_width) // 2
-        y = (screen_height - splash_height) // 2
-        self.geometry(f"{splash_width}x{splash_height}+{x}+{y}")
-        
-        # Create a frame with a cute pastel background
-        if ctk.get_appearance_mode() == "Dark":
-            bg_color = "#2d2438"  # Dark purple
-            inner_color = "#3a2b4a"  # Medium purple
-            border_color = "#b76edc"  # Bright purple
-            title_color = "#e2b6ff"  # Light purple
-            subtitle_color = "#c78ae8"  # Medium light purple
-        else:
-            bg_color = "#fff0f5"  # Light pink
-            inner_color = "#ffebf2"  # Lighter pink
-            border_color = "#ffacc7"  # Medium pink
-            title_color = "#ff85a1"  # Darker pink
-            subtitle_color = "#ffacc7"  # Medium pink
-            
-        self.configure(fg_color=bg_color)
-        
-        # Main content frame with cute border
-        content_frame = ctk.CTkFrame(self, fg_color=inner_color, corner_radius=25, 
-                                   border_width=4, border_color=border_color)
-        content_frame.grid(row=0, column=0, sticky="nsew", padx=40, pady=40)
-        content_frame.grid_columnconfigure(0, weight=1)
-        content_frame.grid_rowconfigure(3, weight=0)
-        
-        # Grid configuration for the main window
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        
-        # Top decoration - row of cute emojis
-        top_emojis = ctk.CTkFrame(content_frame, fg_color="transparent")
-        top_emojis.grid(row=0, column=0, pady=(20, 0))
-        
-        for i, emoji in enumerate(["🌸", "✨", "💖", "✨", "🌸"]):
-            ctk.CTkLabel(
-                top_emojis,
-                text=emoji,
                 font=ctk.CTkFont(size=30),
             ).grid(row=0, column=i, padx=15)
         

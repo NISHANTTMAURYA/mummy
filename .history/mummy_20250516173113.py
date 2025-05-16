@@ -1482,37 +1482,6 @@ class CopyPage(ctk.CTkFrame):
                 row_frame.bind("<Enter>", on_enter)
                 row_frame.bind("<Leave>", on_leave)
     
-    def _parse_filename(self, filename):
-        """Extract year, term and standard information from filename"""
-        info = {
-            "year": "",
-            "term": "",
-            "std": ""
-        }
-        
-        # Example filename format: iso_excel_2024-2025_term1_FYJC.xlsx
-        parts = filename.replace(".xlsx", "").split("_")
-        
-        # Extract year
-        for part in parts:
-            if "-" in part and part.startswith("20"):
-                info["year"] = part
-                break
-        
-        # Extract term - look for exact term matching
-        if "_term1" in filename:
-            info["term"] = "term1"
-        elif "_term2" in filename:
-            info["term"] = "term2"
-        
-        # Extract standard - look for exact std matching
-        if "_FYJC" in filename:
-            info["std"] = "FYJC"
-        elif "_SYJC" in filename:
-            info["std"] = "SYJC"
-        
-        return info
-    
     def _shorten_filename(self, filename):
         """Create a shorter display version of the filename"""
         # Remove the common prefix

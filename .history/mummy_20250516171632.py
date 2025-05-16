@@ -1063,21 +1063,20 @@ class CopyPage(ctk.CTkFrame):
         # Add filter options
         filter_frame = ctk.CTkFrame(list_frame, fg_color=self.colors["bg_secondary"], corner_radius=10)
         filter_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=(5, 10))
-        filter_frame.grid_columnconfigure(4, weight=1)  # Push filters to the right
         
         # Create filter dropdowns
         filter_label = ctk.CTkLabel(filter_frame, 
                                   text="🔍 Filter by:", 
                                   font=ctk.CTkFont(size=14, weight="bold"),
                                   text_color="#ffffff")
-        filter_label.grid(row=0, column=0, padx=(15, 5), pady=10, sticky="e")
+        filter_label.grid(row=0, column=0, padx=(15, 5), pady=10, sticky="w")
         
         # Year filter
         self.year_filter_var = ctk.StringVar(value="All Years")
         self.year_filter = ctk.CTkOptionMenu(filter_frame,
                                            values=["All Years"],
                                            variable=self.year_filter_var,
-                                           width=100,  # Reduced width
+                                           width=120,
                                            height=30,
                                            font=ctk.CTkFont(size=12),
                                            fg_color=self.colors["dropdown_bg"],
@@ -1087,14 +1086,14 @@ class CopyPage(ctk.CTkFrame):
                                            dropdown_hover_color=self.colors["dropdown_hover"],
                                            corner_radius=8,
                                            command=self.apply_filters)
-        self.year_filter.grid(row=0, column=1, padx=(5, 5), pady=10, sticky="e")
+        self.year_filter.grid(row=0, column=1, padx=(5, 5), pady=10, sticky="w")
         
         # Term filter
         self.term_filter_var = ctk.StringVar(value="All Terms")
         self.term_filter = ctk.CTkOptionMenu(filter_frame,
                                            values=["All Terms", "term1", "term2"],
                                            variable=self.term_filter_var,
-                                           width=100,  # Reduced width
+                                           width=120,
                                            height=30,
                                            font=ctk.CTkFont(size=12),
                                            fg_color=self.colors["dropdown_bg"],
@@ -1104,14 +1103,14 @@ class CopyPage(ctk.CTkFrame):
                                            dropdown_hover_color=self.colors["dropdown_hover"],
                                            corner_radius=8,
                                            command=self.apply_filters)
-        self.term_filter.grid(row=0, column=2, padx=(5, 5), pady=10, sticky="e")
+        self.term_filter.grid(row=0, column=2, padx=(5, 5), pady=10, sticky="w")
         
         # Standard filter
         self.std_filter_var = ctk.StringVar(value="All Standards")
         self.std_filter = ctk.CTkOptionMenu(filter_frame,
                                            values=["All Standards", "FYJC", "SYJC"],
                                            variable=self.std_filter_var,
-                                           width=100,  # Reduced width
+                                           width=120,
                                            height=30,
                                            font=ctk.CTkFont(size=12),
                                            fg_color=self.colors["dropdown_bg"],
@@ -1121,19 +1120,19 @@ class CopyPage(ctk.CTkFrame):
                                            dropdown_hover_color=self.colors["dropdown_hover"],
                                            corner_radius=8,
                                            command=self.apply_filters)
-        self.std_filter.grid(row=0, column=3, padx=(5, 5), pady=10, sticky="e")
+        self.std_filter.grid(row=0, column=3, padx=(5, 5), pady=10, sticky="w")
         
         # Reset button
         reset_btn = ctk.CTkButton(filter_frame,
                                  text="↺ Reset",
-                                 width=70,  # Reduced width
+                                 width=80,
                                  height=30,
                                  font=ctk.CTkFont(size=12, weight="bold"),
                                  fg_color=self.colors["accent"],
                                  hover_color=self.colors["accent_hover"],
                                  corner_radius=8,
                                  command=self.reset_filters)
-        reset_btn.grid(row=0, column=5, padx=(5, 15), pady=10, sticky="e")
+        reset_btn.grid(row=0, column=4, padx=(15, 15), pady=10, sticky="e")
 
         # Create a container for the scrollable frame with proper border
         scroll_container = ctk.CTkFrame(list_frame, fg_color="transparent", border_width=2, 
@@ -1328,8 +1327,6 @@ class CopyPage(ctk.CTkFrame):
         # Get all files first (without filtering)
         self.all_files = []
         available_years = set(["All Years"])
-        available_terms = set(["All Terms"])
-        available_stds = set(["All Standards"])
         
         if os.path.exists("excel_copies"):
             # Get only valid Excel files, filtering out system files and temp files
@@ -1346,21 +1343,40 @@ class CopyPage(ctk.CTkFrame):
                 file_info = self._parse_filename(fname)
                 self.all_files.append((fname, file_info))
                 
-                # Collect available filter options
+                # Collect available years for the filter
                 if file_info["year"]:
                     available_years.add(file_info["year"])
-                if file_info["term"]:
-                    available_terms.add(file_info["term"])
-                if file_info["std"]:
-                    available_stds.add(file_info["std"])
         
-        # Update filter dropdown options
+        # Update year filter options
         self.year_filter.configure(values=sorted(list(available_years)))
-        self.term_filter.configure(values=sorted(list(available_terms)))
-        self.std_filter.configure(values=sorted(list(available_stds)))
         
         # Apply current filters
         self._display_filtered_files()
+    
+    def _parse_filename(self, filename):
+        """Extract year, term and standard information from filename"""
+        info = {
+            "year": "",
+            "term": "",
+            "std": ""
+        }
+        
+        # Example filename format: iso_excel_2024-2025_term1_FYJC.xlsx
+        parts = filename.replace(".xlsx", "").split("_")
+        
+        # Extract year
+        for part in parts:
+            if "-" in part and part.startswith("20"):
+                info["year"] = part
+                break
+        
+        # Extract term
+        info["term"] = "term1" if "term1" in filename else "term2" if "term2" in filename else ""
+        
+        # Extract standard
+        info["std"] = "FYJC" if "FYJC" in filename else "SYJC" if "SYJC" in filename else ""
+        
+        return info
     
     def _display_filtered_files(self):
         """Display files based on current filter settings"""
@@ -1369,19 +1385,13 @@ class CopyPage(ctk.CTkFrame):
         term_filter = self.term_filter_var.get()
         std_filter = self.std_filter_var.get()
         
-        # Clear current display
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
-        
         # Apply filters
         filtered_files = []
         for fname, info in self.all_files:
             # Check if the file matches all active filters
-            year_match = (year_filter == "All Years" or info["year"] == year_filter)
-            term_match = (term_filter == "All Terms" or info["term"] == term_filter)
-            std_match = (std_filter == "All Standards" or info["std"] == std_filter)
-            
-            if year_match and term_match and std_match:
+            if (year_filter == "All Years" or info["year"] == year_filter) and \
+               (term_filter == "All Terms" or info["term"] == term_filter) and \
+               (std_filter == "All Standards" or info["std"] == std_filter):
                 filtered_files.append((fname, info))
         
         # Display the filtered files
@@ -1411,66 +1421,69 @@ class CopyPage(ctk.CTkFrame):
             for i, (fname, info) in enumerate(sorted(filtered_files), start=0):
                 file_path = os.path.abspath(os.path.join("excel_copies", fname))
                 
-                # Create a compact file row with hover effect
+                # Create a cute file row with hover effect
                 row_frame = ctk.CTkFrame(files_container, 
                                        fg_color=self.colors["file_bg"], 
                                        corner_radius=10)
-                row_frame.grid(row=i, column=0, sticky="ew", pady=3, padx=5)  # Reduced padding
+                row_frame.grid(row=i, column=0, sticky="ew", pady=5, padx=5)
                 
-                # Configure row layout
-                row_frame.grid_columnconfigure(0, weight=0)  # File icon
-                row_frame.grid_columnconfigure(1, weight=0)  # Filename
-                row_frame.grid_columnconfigure(2, weight=1)  # Badges (expand to push button right)
-                row_frame.grid_columnconfigure(3, weight=0)  # Button fixed size
+                # Configure row layout - important for proper button placement
+                row_frame.grid_columnconfigure(0, weight=1)  # File info expands
+                row_frame.grid_columnconfigure(1, weight=0)  # Button stays fixed size
                 
-                # File icon - more compact
-                file_icon = ctk.CTkLabel(row_frame, 
+                # File info frame (icon + name)
+                file_info = ctk.CTkFrame(row_frame, fg_color="transparent")
+                file_info.grid(row=0, column=0, sticky="w", padx=10, pady=8)
+                
+                # File icon
+                file_icon = ctk.CTkLabel(file_info, 
                                       text="📄", 
-                                      font=ctk.CTkFont(size=18))
-                file_icon.grid(row=0, column=0, padx=(8, 5), pady=6, sticky="w")
+                                      font=ctk.CTkFont(size=20))
+                file_icon.pack(side="left", padx=(0, 10))
                 
-                # Filename - more compact
-                short_name = self._shorten_filename(fname)
-                file_name = ctk.CTkLabel(row_frame, 
-                                       text=short_name, 
+                # File name with badges
+                file_name_frame = ctk.CTkFrame(file_info, fg_color="transparent")
+                file_name_frame.pack(side="left", fill="x", expand=True)
+                
+                # Filename
+                file_name = ctk.CTkLabel(file_name_frame, 
+                                       text=fname, 
                                        font=ctk.CTkFont(size=14, weight="bold"),
                                        text_color=self.colors["text_primary"])
-                file_name.grid(row=0, column=1, padx=(0, 8), pady=6, sticky="w")
+                file_name.pack(side="top", anchor="w", pady=(0, 3))
                 
-                # Badges container - compact horizontal layout
-                badges_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-                badges_frame.grid(row=0, column=2, padx=0, pady=6, sticky="w")
+                # Badges row
+                badges_frame = ctk.CTkFrame(file_name_frame, fg_color="transparent")
+                badges_frame.pack(side="top", anchor="w")
                 
-                # Add badges in a row
+                # Add badges for metadata
                 badge_idx = 0
-                
                 if info["year"]:
-                    year_badge = self._create_badge(badges_frame, f"{info['year']}", "#3a2b4a")
-                    year_badge.grid(row=0, column=badge_idx, padx=(0, 3))
+                    year_badge = self._create_badge(badges_frame, f"📅 {info['year']}", "#3a2b4a")
+                    year_badge.grid(row=0, column=badge_idx, padx=(0, 5))
                     badge_idx += 1
                 
                 if info["term"]:
-                    term_text = info["term"].replace("term", "T")  # Shorter text
-                    term_badge = self._create_badge(badges_frame, term_text, "#473960")
-                    term_badge.grid(row=0, column=badge_idx, padx=(0, 3))
+                    term_badge = self._create_badge(badges_frame, f"📘 {info['term']}", "#473960")
+                    term_badge.grid(row=0, column=badge_idx, padx=(0, 5))
                     badge_idx += 1
                 
                 if info["std"]:
                     std_bg = "#E6E6FA" if info["std"] == "FYJC" else "#FFE6E6"
-                    std_badge = self._create_badge(badges_frame, info["std"], std_bg, text_color="#333333")
-                    std_badge.grid(row=0, column=badge_idx, padx=(0, 3))
+                    std_badge = self._create_badge(badges_frame, f"🎓 {info['std']}", std_bg, text_color="#333333")
+                    std_badge.grid(row=0, column=badge_idx, padx=(0, 5))
                 
-                # Open button - more compact
+                # Open button with cute styling
                 open_btn = ctk.CTkButton(row_frame, 
-                                       text="Open", 
-                                       width=60,  # Smaller button
-                                       height=24,
+                                       text="📂 Open", 
+                                       width=80,
+                                       height=28,
                                        font=ctk.CTkFont(size=12, weight="bold"),
                                        fg_color=self.colors["accent"],
                                        hover_color=self.colors["accent_hover"],
                                        corner_radius=8,
                                        command=lambda p=file_path: webbrowser.open(f"file://{p}"))
-                open_btn.grid(row=0, column=3, padx=(5, 8), pady=6, sticky="e")
+                open_btn.grid(row=0, column=1, padx=10, pady=8, sticky="e")
                 
                 # Create highlight effect on hover
                 def on_enter(e, frame=row_frame):
@@ -1482,65 +1495,23 @@ class CopyPage(ctk.CTkFrame):
                 row_frame.bind("<Enter>", on_enter)
                 row_frame.bind("<Leave>", on_leave)
     
-    def _parse_filename(self, filename):
-        """Extract year, term and standard information from filename"""
-        info = {
-            "year": "",
-            "term": "",
-            "std": ""
-        }
-        
-        # Example filename format: iso_excel_2024-2025_term1_FYJC.xlsx
-        parts = filename.replace(".xlsx", "").split("_")
-        
-        # Extract year
-        for part in parts:
-            if "-" in part and part.startswith("20"):
-                info["year"] = part
-                break
-        
-        # Extract term - look for exact term matching
-        if "_term1" in filename:
-            info["term"] = "term1"
-        elif "_term2" in filename:
-            info["term"] = "term2"
-        
-        # Extract standard - look for exact std matching
-        if "_FYJC" in filename:
-            info["std"] = "FYJC"
-        elif "_SYJC" in filename:
-            info["std"] = "SYJC"
-        
-        return info
-    
-    def _shorten_filename(self, filename):
-        """Create a shorter display version of the filename"""
-        # Remove the common prefix
-        if filename.startswith("iso_excel_"):
-            filename = filename[10:]
-        # Remove .xlsx extension
-        if filename.endswith(".xlsx"):
-            filename = filename[:-5]
-        return filename
-    
     def _create_badge(self, parent, text, bg_color, text_color="#ffffff"):
         """Create a small badge with metadata"""
-        badge = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=5)  # Smaller radius
+        badge = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=6)
         
         ctk.CTkLabel(
             badge,
             text=text,
-            font=ctk.CTkFont(size=10),  # Smaller font
+            font=ctk.CTkFont(size=11),
             text_color=text_color,
-            padx=4,  # Reduced padding
+            padx=5,
             pady=0
-        ).pack(padx=2, pady=1)  # Reduced padding
+        ).pack(padx=3, pady=1)
         
         return badge
     
     def apply_filters(self, value=None):
         """Apply filters to the file list"""
-        # Update display based on current filter values
         self._display_filtered_files()
     
     def reset_filters(self):
@@ -1548,7 +1519,6 @@ class CopyPage(ctk.CTkFrame):
         self.year_filter_var.set("All Years")
         self.term_filter_var.set("All Terms")
         self.std_filter_var.set("All Standards")
-        # Apply the reset filters
         self._display_filtered_files()
 
     def _validate_year(self, year):

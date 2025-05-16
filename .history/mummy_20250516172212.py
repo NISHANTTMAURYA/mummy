@@ -1328,8 +1328,6 @@ class CopyPage(ctk.CTkFrame):
         # Get all files first (without filtering)
         self.all_files = []
         available_years = set(["All Years"])
-        available_terms = set(["All Terms"])
-        available_stds = set(["All Standards"])
         
         if os.path.exists("excel_copies"):
             # Get only valid Excel files, filtering out system files and temp files
@@ -1346,21 +1344,47 @@ class CopyPage(ctk.CTkFrame):
                 file_info = self._parse_filename(fname)
                 self.all_files.append((fname, file_info))
                 
-                # Collect available filter options
+                # Collect available years for the filter
                 if file_info["year"]:
                     available_years.add(file_info["year"])
-                if file_info["term"]:
-                    available_terms.add(file_info["term"])
-                if file_info["std"]:
-                    available_stds.add(file_info["std"])
         
-        # Update filter dropdown options
+        # Update year filter options
         self.year_filter.configure(values=sorted(list(available_years)))
-        self.term_filter.configure(values=sorted(list(available_terms)))
-        self.std_filter.configure(values=sorted(list(available_stds)))
         
         # Apply current filters
         self._display_filtered_files()
+    
+    def _parse_filename(self, filename):
+        """Extract year, term and standard information from filename"""
+        info = {
+            "year": "",
+            "term": "",
+            "std": ""
+        }
+        
+        # Example filename format: iso_excel_2024-2025_term1_FYJC.xlsx
+        parts = filename.replace(".xlsx", "").split("_")
+        
+        # Extract year
+        for part in parts:
+            if "-" in part and part.startswith("20"):
+                info["year"] = part
+                break
+        
+        # Extract term
+        if "term1" in filename:
+            info["term"] = "term1"
+        elif "term2" in filename:
+            info["term"] = "term2"
+        
+        # Extract standard
+        if "FYJC" in filename:
+            info["std"] = "FYJC"
+        elif "SYJC" in filename:
+            info["std"] = "SYJC"
+        
+        print(f"Parsed file: {filename} -> {info}")  # Debug output
+        return info
     
     def _display_filtered_files(self):
         """Display files based on current filter settings"""
@@ -1369,9 +1393,8 @@ class CopyPage(ctk.CTkFrame):
         term_filter = self.term_filter_var.get()
         std_filter = self.std_filter_var.get()
         
-        # Clear current display
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
+        # Log filter values for debugging
+        print(f"Filtering: Year={year_filter}, Term={term_filter}, Std={std_filter}")
         
         # Apply filters
         filtered_files = []
@@ -1381,9 +1404,16 @@ class CopyPage(ctk.CTkFrame):
             term_match = (term_filter == "All Terms" or info["term"] == term_filter)
             std_match = (std_filter == "All Standards" or info["std"] == std_filter)
             
+            # Debug output for each file
+            print(f"File: {fname}, Year Match: {year_match}, Term Match: {term_match}, Std Match: {std_match}")
+            
             if year_match and term_match and std_match:
                 filtered_files.append((fname, info))
         
+        # Clear existing files
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+            
         # Display the filtered files
         if not filtered_files:
             no_files_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
@@ -1482,37 +1512,6 @@ class CopyPage(ctk.CTkFrame):
                 row_frame.bind("<Enter>", on_enter)
                 row_frame.bind("<Leave>", on_leave)
     
-    def _parse_filename(self, filename):
-        """Extract year, term and standard information from filename"""
-        info = {
-            "year": "",
-            "term": "",
-            "std": ""
-        }
-        
-        # Example filename format: iso_excel_2024-2025_term1_FYJC.xlsx
-        parts = filename.replace(".xlsx", "").split("_")
-        
-        # Extract year
-        for part in parts:
-            if "-" in part and part.startswith("20"):
-                info["year"] = part
-                break
-        
-        # Extract term - look for exact term matching
-        if "_term1" in filename:
-            info["term"] = "term1"
-        elif "_term2" in filename:
-            info["term"] = "term2"
-        
-        # Extract standard - look for exact std matching
-        if "_FYJC" in filename:
-            info["std"] = "FYJC"
-        elif "_SYJC" in filename:
-            info["std"] = "SYJC"
-        
-        return info
-    
     def _shorten_filename(self, filename):
         """Create a shorter display version of the filename"""
         # Remove the common prefix
@@ -1540,7 +1539,10 @@ class CopyPage(ctk.CTkFrame):
     
     def apply_filters(self, value=None):
         """Apply filters to the file list"""
-        # Update display based on current filter values
+        # Log selected filters for debugging
+        print(f"Applying filters: Year={self.year_filter_var.get()}, Term={self.term_filter_var.get()}, Std={self.std_filter_var.get()}")
+        
+        # Update the display
         self._display_filtered_files()
     
     def reset_filters(self):
@@ -1548,9 +1550,10 @@ class CopyPage(ctk.CTkFrame):
         self.year_filter_var.set("All Years")
         self.term_filter_var.set("All Terms")
         self.std_filter_var.set("All Standards")
-        # Apply the reset filters
+        
+        # Refresh the file list with all filters cleared
         self._display_filtered_files()
-
+    
     def _validate_year(self, year):
         import re
         return re.match(r"^20\d{2}-20\d{2}$", year)
