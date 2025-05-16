@@ -359,8 +359,10 @@ class EditPage(ctk.CTkFrame):
                     
                     # Start tracking new month
                     current_month = str(val).strip()
+                    # Skip adding TOTAL to the dropdown
+                    if current_month.upper() != "TOTAL":
+                        months.append(current_month)
                     start_col = idx
-                    months.append(current_month)
             
             # Save the last month's range
             if current_month:
@@ -377,11 +379,14 @@ class EditPage(ctk.CTkFrame):
                     initials.append(str(row[1]).strip())
             
             self.initials = initials
-            self.month_menu.configure(values=months)
             
-            if months:
-                self.month_var.set(months[0])
-                self.on_month_change(months[0])
+            # Filter out TOTAL from the dropdown
+            filtered_months = [m for m in months if m.upper() != "TOTAL"]
+            self.month_menu.configure(values=filtered_months)
+            
+            if filtered_months:
+                self.month_var.set(filtered_months[0])
+                self.on_month_change(filtered_months[0])
             else:
                 self.month_var.set("")
                 self.clear_data_frame()
