@@ -156,11 +156,7 @@ class EditPage(ctk.CTkFrame):
             else:
                 self.month_var.set("")
                 self.clear_data_frame()
-            print(f"Months: {months}")
-            print(f"Headers: {self.sub_headers}")
-            print(f"Initials: {initials}")
         except Exception as e:
-            print(f"Error loading file: {e}")
             self.status_label.configure(text=f"Error loading file: {e}", text_color="red")
             self.month_menu.configure(values=[])
             self.clear_data_frame()
@@ -187,7 +183,6 @@ class EditPage(ctk.CTkFrame):
     def display_data(self):
         self.clear_data_frame()
         if not (self.current_file and self.current_month):
-            print(f"[DEBUG] Missing selection: file={self.current_file}, month={self.current_month}")
             return
         import openpyxl
         try:
@@ -200,7 +195,6 @@ class EditPage(ctk.CTkFrame):
             wb = openpyxl.load_workbook(self.current_file)
             ws = wb.active
             col_range = self.month_col_ranges.get(self.current_month)
-            print(f"[DEBUG] col_range for month {self.current_month}: {col_range}")
             if not col_range:
                 self.status_label.configure(text="Month not found.", text_color="red")
                 ctk.CTkLabel(self.data_frame, text="No data found for selected month.", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10)
@@ -230,14 +224,11 @@ class EditPage(ctk.CTkFrame):
                             elif val is not None:
                                 # Clean up the value - keep only the number part
                                 val = str(val).strip().replace('+', '').strip()
-                                print(f"[DEBUG] Converted E-Add value from '{cell.value}' to '{val}' for display")
                         elif val is None or str(val).strip().lower() == 'none':
                             val = ''
                         values.append(val)
                     data.append(values)
                     row_indices.append(i)
-            print(f"[DEBUG] Table headers: {headers}")
-            print(f"[DEBUG] Table data: {data}")
             if not headers or not data:
                 ctk.CTkLabel(self.data_frame, text="No data to display for this selection.", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10)
                 return
@@ -248,8 +239,8 @@ class EditPage(ctk.CTkFrame):
             table_container.grid_columnconfigure(0, weight=1)
             table_container.grid_rowconfigure(0, weight=1)
             
-            # Add a border frame around the table
-            border_frame = ctk.CTkFrame(table_container, fg_color="transparent", border_width=2, border_color="#1f538d")
+            # Add a border frame around the table with improved styling
+            border_frame = ctk.CTkFrame(table_container, fg_color="#1e2433", border_width=3, border_color="#3a7ebf", corner_radius=10)
             border_frame.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
             border_frame.grid_columnconfigure(0, weight=1)
             border_frame.grid_rowconfigure(0, weight=1)
@@ -260,32 +251,32 @@ class EditPage(ctk.CTkFrame):
             
             # Configure the Treeview colors and font
             style.configure("Custom.Treeview", 
-                background="#2b2b2b",
-                foreground="white",
+                background="#2d3748",  # Darker blue-gray background
+                foreground="#e2e8f0",  # Light gray text for better contrast
                 rowheight=50,  # Increased row height
-                fieldbackground="#2b2b2b",
+                fieldbackground="#2d3748",
                 borderwidth=2)  # Increased border width
             
-            # Configure the header style
+            # Configure the header style with more prominent headers
             style.configure("Custom.Treeview.Heading",
-                background="#1f538d",
+                background="#2563eb",  # Brighter blue headers
                 foreground="white",
                 relief="raised",
-                borderwidth=2,  # Increased border width
-                font=('Arial', 14, 'bold'))  # Increased font size
+                borderwidth=2,
+                font=('Arial', 16, 'bold'))  # Increased font size and bold
             
             # Configure selection colors
             style.map('Custom.Treeview', 
-                background=[('selected', '#3a7ebf')],
+                background=[('selected', '#3b82f6')],  # Bright blue selection
                 foreground=[('selected', 'white')])
             
-            # Add grid lines
+            # Configure the Treeview to show grid lines
             style.layout("Custom.Treeview", [
                 ('Custom.Treeview.treearea', {'sticky': 'nswe'})
             ])
             style.configure("Custom.Treeview", 
-                            borderwidth=2,  # Increased border width
-                            relief="solid")
+                            borderwidth=0,
+                            relief="flat")
                 
             # Create Treeview with increased row height
             self.tree = ttk.Treeview(border_frame, columns=headers, show="headings", 
@@ -297,30 +288,48 @@ class EditPage(ctk.CTkFrame):
                 self.tree.heading(h, text=h)
                 self.tree.column(h, width=column_width, anchor="center")
             
-            # Add data to the treeview with alternating row colors and grid lines
+            # Add data to the treeview with alternating row colors
             for idx, row in enumerate(data):
                 item_id = self.tree.insert("", "end", values=row)
                 
                 # Apply alternating row colors
                 if idx % 2 == 1:
                     self.tree.item(item_id, tags=('odd_row',))
+                else:
+                    self.tree.item(item_id, tags=('even_row',))
             
-            # Configure row styles
-            self.tree.tag_configure('odd_row', background='#333333', font=('Arial', 14))  # Increased font size
-            self.tree.tag_configure('even_row', background='#2b2b2b', font=('Arial', 14))  # Added even row style with increased font size
+            # Configure row styles with subtle alternating colors
+            self.tree.tag_configure('odd_row', background='#374151', font=('Arial', 14))  # Dark blue-gray
+            self.tree.tag_configure('even_row', background='#2d3748', font=('Arial', 14))  # Darker blue-gray
             
-            # Apply even row style to even rows
-            for idx, item in enumerate(self.tree.get_children()):
-                if idx % 2 == 0:
-                    self.tree.item(item, tags=('even_row',))
+            # Add horizontal grid lines tag
+            self.tree.tag_configure('bottom_line', background='#4b5563')
             
-            # Add a scrollbar
-            scrollbar = ttk.Scrollbar(border_frame, orient="vertical", command=self.tree.yview)
+            # Add a custom scrollbar with improved styling
+            scrollbar_style = ttk.Style()
+            scrollbar_style.configure("Custom.Vertical.TScrollbar", 
+                                     background="#3a7ebf", 
+                                     troughcolor="#1e2433",
+                                     bordercolor="#3a7ebf",
+                                     arrowcolor="white")
+            
+            scrollbar = ttk.Scrollbar(border_frame, orient="vertical", 
+                                     command=self.tree.yview,
+                                     style="Custom.Vertical.TScrollbar")
             self.tree.configure(yscrollcommand=scrollbar.set)
             
             # Place the treeview and scrollbar
-            self.tree.grid(row=0, column=0, sticky="nsew")
-            scrollbar.grid(row=0, column=1, sticky="ns")
+            self.tree.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+            scrollbar.grid(row=0, column=1, sticky="ns", pady=5)
+            
+            # Add a title for the table
+            month_title = ctk.CTkLabel(
+                self.data_frame, 
+                text=f"{self.current_month} Data", 
+                font=ctk.CTkFont(size=20, weight="bold"),
+                text_color="#3b82f6"
+            )
+            month_title.grid(row=0, column=0, sticky="n", pady=(0, 0))
             
             self.data_frame.grid_columnconfigure(0, weight=1)
             self.data_frame.grid_rowconfigure(0, weight=1)
@@ -335,7 +344,6 @@ class EditPage(ctk.CTkFrame):
             self.data_widgets = [(headers, row_indices, header_indices)]
             self.status_label.configure(text="", text_color="green")
         except Exception as e:
-            print(f"[DEBUG] Error displaying data: {e}")
             self.status_label.configure(text=f"Error: {e}", text_color="red")
             ctk.CTkLabel(self.data_frame, text=f"Error: {e}", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=10, pady=10)
             
@@ -362,8 +370,6 @@ class EditPage(ctk.CTkFrame):
             wb = openpyxl.load_workbook(self.current_file)
             ws = wb.active
             
-            print(f"[DEBUG] Trying to save at row={row_idx}, col={col+1}, header={header}, value='{value}'")
-            
             # Process the value based on the header
             if header == "E-Add":
                 # Process E-Add value
@@ -375,24 +381,18 @@ class EditPage(ctk.CTkFrame):
                     cell_value = f'+{v}'
                 else:
                     cell_value = '+'
-                    
-                print(f"[DEBUG] Saving E-Add value '{cell_value}' to Excel at row {row_idx}, col {col+1}")
                 
                 # Get the actual cell
                 cell = ws.cell(row=row_idx, column=col+1)
                 # Set its value
                 cell.value = cell_value
-                print(f"[DEBUG] Cell value set to: {cell.value}")
             else:
                 # For other headers, just use the value as is
                 cell_value = value if value and value.strip() else None
-                print(f"[DEBUG] Saving {header} value '{cell_value}' to Excel at row {row_idx}, col {col+1}")
                 ws.cell(row=row_idx, column=col+1).value = cell_value
             
             # Save the workbook
             wb.save(self.current_file)
-            
-            print(f"[DEBUG] Excel file saved successfully")
             
             # Don't refresh when moving to next cell during rapid edits
             # We'll set a flag so we know this cell was just edited
@@ -402,7 +402,6 @@ class EditPage(ctk.CTkFrame):
             self.status_label.configure(text="Changes saved!", text_color="green")
             return True
         except Exception as e:
-            print(f"[DEBUG] Error saving single cell: {e}")
             self.status_label.configure(text=f"Error saving: {e}", text_color="red")
             return False
 
@@ -412,6 +411,27 @@ class EditPage(ctk.CTkFrame):
             self.status_label.configure(text="No file selected or not an Excel file.", text_color="red")
             return
         
+        # First, check if we are currently editing a cell and save it if needed
+        if hasattr(self, 'edit_entry') and self.edit_entry:
+            edit_frame, entry, item, col_idx, header = self.edit_entry
+            if edit_frame.winfo_exists():
+                # Get the current value from the entry
+                new_value = entry.get().strip()
+                
+                # Update the treeview
+                values = list(self.tree.item(item, 'values'))
+                old_value = values[col_idx]
+                values[col_idx] = new_value
+                self.tree.item(item, values=values)
+                
+                # Clean up
+                edit_frame.destroy()
+                self.edit_entry = None
+                
+                # If the value has changed, save it
+                if old_value != new_value:
+                    self._save_single_cell(item, col_idx, header, new_value)
+        
         import openpyxl
         try:
             # Get the current values directly from the treeview
@@ -419,10 +439,6 @@ class EditPage(ctk.CTkFrame):
             current_values = []
             for item in all_items:
                 current_values.append(self.tree.item(item, 'values'))
-            
-            print("[DEBUG] Current values to save:")
-            for val in current_values:
-                print(f"[DEBUG] {val}")
             
             # Open the workbook
             wb = openpyxl.load_workbook(self.current_file)
@@ -441,8 +457,6 @@ class EditPage(ctk.CTkFrame):
                     header = headers[i+1]  # +1 because headers[0] is "Initial"
                     val = values[i+1]      # +1 because values[0] is Initial
                     
-                    print(f"[DEBUG] Saving {header}='{val}' to row {row_idx}, col {col+1}")
-                    
                     if header == "E-Add":
                         # Process E-Add value
                         v = str(val).strip() if val is not None else ""
@@ -458,19 +472,15 @@ class EditPage(ctk.CTkFrame):
                         cell = ws.cell(row=row_idx, column=col+1)
                         # Set its value
                         cell.value = cell_value
-                        print(f"[DEBUG] Saved E-Add value '{cell_value}' to Excel at row {row_idx}, col {col+1}")
                     else:
                         # Process other values
                         if val is not None and str(val).strip() != '' and str(val).strip().lower() != 'none':
                             ws.cell(row=row_idx, column=col+1).value = val
-                            print(f"[DEBUG] Saved {header} value '{val}' to Excel at row {row_idx}, col {col+1}")
                         else:
                             ws.cell(row=row_idx, column=col+1).value = None
-                            print(f"[DEBUG] Cleared {header} value at row {row_idx}, col {col+1}")
             
             # Save the workbook
             wb.save(self.current_file)
-            print(f"[DEBUG] Excel file saved successfully")
             
             # Force reload of data after save all changes
             self.refresh_data()
@@ -478,7 +488,6 @@ class EditPage(ctk.CTkFrame):
             self.status_label.configure(text="All changes saved!", text_color="green")
             
         except Exception as e:
-            print(f"[DEBUG] Error saving: {e}")
             self.status_label.configure(text=f"Error saving: {e}", text_color="red")
 
     def on_double_click(self, event):
@@ -510,18 +519,19 @@ class EditPage(ctk.CTkFrame):
         if header == "E-Add" and current_value and str(current_value).startswith('+'):
             current_value = str(current_value).replace('+', '').strip()
         
-        # Create a frame for better control
-        edit_frame = tk.Frame(self.tree, bg="#3a7ebf", highlightthickness=2, highlightbackground="#1f538d")
+        # Create a frame for better control with improved styling
+        edit_frame = tk.Frame(self.tree, bg="#3b82f6", highlightthickness=2, highlightbackground="#60a5fa")
         edit_frame.place(x=x, y=y, width=width, height=height)
         
-        # Create the entry widget with larger font
+        # Create the entry widget with larger font and improved styling
         entry_var = tk.StringVar(value=current_value if current_value else "")
         entry = tk.Entry(edit_frame, textvariable=entry_var, 
-                         font=('Arial', 16),  # Increased font size
-                         bg="#3a7ebf",
+                         font=('Arial', 16, 'bold'),  # Increased font size and bold
+                         bg="#3b82f6",
                          fg="white",
                          bd=0,
-                         highlightthickness=0)
+                         highlightthickness=0,
+                         justify=tk.CENTER)  # Center-aligned text
         entry.pack(fill="both", expand=True)
         entry.focus_set()
         entry.select_range(0, tk.END)
@@ -548,11 +558,6 @@ class EditPage(ctk.CTkFrame):
             if old_value != new_value:
                 # Save changes to Excel directly
                 save_success = self._save_single_cell(item, col_idx, header, new_value)
-                
-                if save_success:
-                    # Debug
-                    print(f"[DEBUG] Successfully edited {header} value: '{new_value}'")
-                    print(f"[DEBUG] Updated row: {values}")
             
             # Move to the next cell if requested
             if move_to_next and event and event.keysym == 'Return' and save_success:
