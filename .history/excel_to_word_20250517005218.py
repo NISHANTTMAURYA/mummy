@@ -421,33 +421,19 @@ def create_multi_month_document(csv_path, template_path, output_folder="output_w
     return True
 
 def convert_excel_to_csv(excel_path):
-    """Convert Excel file to CSV file with the same base name and return the path."""
-    csv_path = os.path.splitext(excel_path)[0] + ".csv"
+    """Convert Excel file to temporary CSV file and return the path."""
     try:
         logger.info(f"Reading Excel file: {excel_path}")
         df = pd.read_excel(excel_path, header=None)
-        logger.info(f"Converting to CSV: {csv_path}")
-        df.to_csv(csv_path, index=False, header=False, encoding='utf-8-sig')
-        return csv_path
+        temp_csv = tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='w', newline='', encoding='utf-8-sig')
+        temp_csv_path = temp_csv.name
+        logger.info(f"Converting to CSV: {temp_csv_path}")
+        df.to_csv(temp_csv_path, index=False, header=False)
+        temp_csv.close()
+        return temp_csv_path
     except Exception as e:
         logger.error(f"Error converting Excel to CSV: {e}")
         return None
-
-def force_excel_recalc_and_save(excel_path):
-    """Open Excel file, force recalculation, and save using Excel COM automation."""
-    try:
-        import win32com.client
-        excel = win32com.client.Dispatch("Excel.Application")
-        excel.Visible = False
-        wb = excel.Workbooks.Open(os.path.abspath(excel_path))
-        wb.RefreshAll()
-        excel.CalculateFullRebuild()
-        wb.Save()
-        wb.Close(False)
-        excel.Quit()
-        logger.info(f"Excel formulas recalculated and file saved: {excel_path}")
-    except Exception as e:
-        logger.error(f"Error recalculating and saving Excel file: {e}")
 
 def process_excel_files(excel_folder="excel_copies", template_path="executive_summary_template.docx", output_folder="output_word_files"):
     """Process all Excel files in the given folder."""
@@ -461,17 +447,16 @@ def process_excel_files(excel_folder="excel_copies", template_path="executive_su
         if filename.endswith(('.xlsx', '.xls')) and filename.startswith('iso_excel_'):
             file_path = os.path.join(excel_folder, filename)
             logger.info(f"Processing Excel file: {filename}")
-            force_excel_recalc_and_save(file_path)
-            csv_path = convert_excel_to_csv(file_path)
-            if csv_path:
+            temp_csv_path = convert_excel_to_csv(file_path)
+            if temp_csv_path:
                 try:
-                    create_multi_month_document(csv_path, template_path, output_folder)
+                    create_multi_month_document(temp_csv_path, template_path, output_folder)
                 finally:
                     try:
-                        os.unlink(csv_path)
-                        logger.info(f"Cleaned up CSV file: {csv_path}")
+                        os.unlink(temp_csv_path)
+                        logger.info(f"Cleaned up temporary CSV file: {temp_csv_path}")
                     except Exception as e:
-                        logger.error(f"Error cleaning up CSV file: {e}")
+                        logger.error(f"Error cleaning up temporary CSV file: {e}")
 
 # Example usage
 if __name__ == "__main__":

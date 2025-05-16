@@ -433,22 +433,6 @@ def convert_excel_to_csv(excel_path):
         logger.error(f"Error converting Excel to CSV: {e}")
         return None
 
-def force_excel_recalc_and_save(excel_path):
-    """Open Excel file, force recalculation, and save using Excel COM automation."""
-    try:
-        import win32com.client
-        excel = win32com.client.Dispatch("Excel.Application")
-        excel.Visible = False
-        wb = excel.Workbooks.Open(os.path.abspath(excel_path))
-        wb.RefreshAll()
-        excel.CalculateFullRebuild()
-        wb.Save()
-        wb.Close(False)
-        excel.Quit()
-        logger.info(f"Excel formulas recalculated and file saved: {excel_path}")
-    except Exception as e:
-        logger.error(f"Error recalculating and saving Excel file: {e}")
-
 def process_excel_files(excel_folder="excel_copies", template_path="executive_summary_template.docx", output_folder="output_word_files"):
     """Process all Excel files in the given folder."""
     if not os.path.exists(excel_folder):
@@ -461,7 +445,6 @@ def process_excel_files(excel_folder="excel_copies", template_path="executive_su
         if filename.endswith(('.xlsx', '.xls')) and filename.startswith('iso_excel_'):
             file_path = os.path.join(excel_folder, filename)
             logger.info(f"Processing Excel file: {filename}")
-            force_excel_recalc_and_save(file_path)
             csv_path = convert_excel_to_csv(file_path)
             if csv_path:
                 try:
