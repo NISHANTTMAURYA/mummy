@@ -186,14 +186,8 @@ def process_single_month(template_path, month_name, data_rows, columns, file_inf
         is_syjc = file_info['original_std'] == 'SYJC'
         is_fyjc = file_info['original_std'] == 'FYJC'
         first_data_row = placeholder_row_idx
-        # Use the correct field_map: for TOTAL page, always use 'TOTAL' as the key
-        if month_field_map:
-            if month_name.upper() not in month_field_map and 'TOTAL' in month_field_map:
-                field_map = month_field_map['TOTAL']
-            else:
-                field_map = month_field_map.get(month_name.upper(), columns)
-        else:
-            field_map = columns
+        # Use the new month_field_map for this month
+        field_map = month_field_map[month_name.upper()] if month_field_map else columns
         for data_idx, data_row in enumerate(data_rows):
             if not data_row or len(data_row) < 2:
                 continue
@@ -353,20 +347,17 @@ def create_multi_month_document(csv_path, template_path, output_folder="output_w
                 if not all(key in columns for key in ['ALLOTTED', 'ENGAGED', 'GAP']):
                     logger.warning(f"Skipping month {month_name} - missing columns: {columns}")
                     continue
-                # If this is the TOTAL page, use 'TOTAL' for lookups but pass month_range for the Word placeholder
+                # If this is the TOTAL page, use the month_range for the month_name
                 if month_name == 'TOTAL':
-                    total_file = os.path.join(month_folder, f"{file_info['original_std']}_TOTAL_{file_info['year_range']}.docx")
-                    success = process_single_month(
+                    process_single_month(
                         template_path=template_path,
-                        month_name=month_range,  # For Word placeholder
+                        month_name=month_range,
                         data_rows=all_data,
-                        columns=month_field_map['TOTAL'],  # For data/column lookups
+                        columns=columns,
                         file_info=file_info,
-                        output_path=total_file,
+                        output_path=os.path.join(month_folder, f"{file_info['original_std']}_TOTAL_{file_info['year_range']}.docx"),
                         month_field_map=month_field_map
                     )
-                    if success:
-                        month_files.append(total_file)
                     continue
                 # Process the month as usual
                 month_file = os.path.join(month_folder, f"{file_info['original_std']}_{month_name}_{file_info['year_range']}.docx")

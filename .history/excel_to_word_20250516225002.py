@@ -355,18 +355,15 @@ def create_multi_month_document(csv_path, template_path, output_folder="output_w
                     continue
                 # If this is the TOTAL page, use 'TOTAL' for lookups but pass month_range for the Word placeholder
                 if month_name == 'TOTAL':
-                    total_file = os.path.join(month_folder, f"{file_info['original_std']}_TOTAL_{file_info['year_range']}.docx")
-                    success = process_single_month(
+                    process_single_month(
                         template_path=template_path,
                         month_name=month_range,  # For Word placeholder
                         data_rows=all_data,
                         columns=month_field_map['TOTAL'],  # For data/column lookups
                         file_info=file_info,
-                        output_path=total_file,
+                        output_path=os.path.join(month_folder, f"{file_info['original_std']}_TOTAL_{file_info['year_range']}.docx"),
                         month_field_map=month_field_map
                     )
-                    if success:
-                        month_files.append(total_file)
                     continue
                 # Process the month as usual
                 month_file = os.path.join(month_folder, f"{file_info['original_std']}_{month_name}_{file_info['year_range']}.docx")

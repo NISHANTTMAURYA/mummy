@@ -186,14 +186,8 @@ def process_single_month(template_path, month_name, data_rows, columns, file_inf
         is_syjc = file_info['original_std'] == 'SYJC'
         is_fyjc = file_info['original_std'] == 'FYJC'
         first_data_row = placeholder_row_idx
-        # Use the correct field_map: for TOTAL page, always use 'TOTAL' as the key
-        if month_field_map:
-            if month_name.upper() not in month_field_map and 'TOTAL' in month_field_map:
-                field_map = month_field_map['TOTAL']
-            else:
-                field_map = month_field_map.get(month_name.upper(), columns)
-        else:
-            field_map = columns
+        # Use the new month_field_map for this month
+        field_map = month_field_map[month_name.upper()] if month_field_map else columns
         for data_idx, data_row in enumerate(data_rows):
             if not data_row or len(data_row) < 2:
                 continue
@@ -326,6 +320,15 @@ def create_multi_month_document(csv_path, template_path, output_folder="output_w
             # Second row contains column labels
             field_row = next(reader)
             
+            # Find all months in header_row (skip first two columns)
+            month_names = [cell.strip().upper() for cell in header_row[2:] if cell.strip()]
+            if month_names:
+                start_month = month_names[0]
+                end_month = month_names[-1]
+                month_range = f"{start_month}-{end_month}"
+            else:
+                month_range = ""
+            
             # Map column indices for each month
             month_field_map = parse_month_field_columns(header_row, field_row)
             
@@ -339,37 +342,16 @@ def create_multi_month_document(csv_path, template_path, output_folder="output_w
                     if row[0].strip().upper() == 'TOTAL':
                         break
             
-            # In create_multi_month_document, after reading header_row and field_row, determine the first and last month dynamically
-            months_in_file = [cell.strip().upper() for cell in header_row[2:] if cell.strip() and cell.strip().upper() not in ("TOTAL", "SR.NO.", "INITIALS")]
-            if months_in_file:
-                start_month = months_in_file[0]
-                end_month = months_in_file[-1]
-                month_range = f"{start_month}-{end_month}"
-            else:
-                month_range = ""
-            
             # Process each month
             for month_name, columns in month_field_map.items():
                 if not all(key in columns for key in ['ALLOTTED', 'ENGAGED', 'GAP']):
                     logger.warning(f"Skipping month {month_name} - missing columns: {columns}")
                     continue
-                # If this is the TOTAL page, use 'TOTAL' for lookups but pass month_range for the Word placeholder
-                if month_name == 'TOTAL':
-                    total_file = os.path.join(month_folder, f"{file_info['original_std']}_TOTAL_{file_info['year_range']}.docx")
-                    success = process_single_month(
-                        template_path=template_path,
-                        month_name=month_range,  # For Word placeholder
-                        data_rows=all_data,
-                        columns=month_field_map['TOTAL'],  # For data/column lookups
-                        file_info=file_info,
-                        output_path=total_file,
-                        month_field_map=month_field_map
-                    )
-                    if success:
-                        month_files.append(total_file)
-                    continue
-                # Process the month as usual
+                
+                # Create output file path for this month
                 month_file = os.path.join(month_folder, f"{file_info['original_std']}_{month_name}_{file_info['year_range']}.docx")
+                
+                # Process the month
                 success = process_single_month(
                     template_path=template_path,
                     month_name=month_name,
@@ -379,8 +361,41 @@ def create_multi_month_document(csv_path, template_path, output_folder="output_w
                     output_path=month_file,
                     month_field_map=month_field_map
                 )
+                
                 if success:
                     month_files.append(month_file)
+            
+            # Find the TOTAL row
+            total_row = None
+            for row in all_data:
+                if row[0].strip().upper() == 'TOTAL':
+                    total_row = row
+                    break
+            if total_row:
+                # Create output file path for the total page
+                total_file = os.path.join(output_folder, f"{file_info['original_std']}_TOTAL_{file_info['year_range']}.docx")
+                # Use the first month's columns for mapping (or adjust as needed)
+                first_month = list(month_field_map.keys())[0]
+                columns = month_field_map[first_month]
+                # Prepare replacements with month_range
+                def process_total_page(template_path, data_row, columns, file_info, output_path, month_range):
+                    doc = Document(template_path)
+                    replacements = {
+                        "{{year}}": file_info['year_range'],
+                        "{{month}}": month_range,
+                        "ES/00": f"ES/{file_info['standard']}"
+                    }
+                    for paragraph in doc.paragraphs:
+                        replace_placeholders_in_paragraph(paragraph, replacements)
+                    for table in doc.tables:
+                        for row in table.rows:
+                            for cell in row.cells:
+                                for paragraph in cell.paragraphs:
+                                    replace_placeholders_in_paragraph(paragraph, replacements)
+                    # Optionally fill in total data if needed
+                    doc.save(output_path)
+                    logger.info(f"Processed TOTAL page and saved to {output_path}")
+                process_total_page(template_path, total_row, columns, file_info, total_file, month_range)
             
             # Create a text file with instructions on how to manually combine the files
             if month_files:
