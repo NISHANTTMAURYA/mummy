@@ -1828,19 +1828,6 @@ class App(ctk.CTk):
                                         corner_radius=15)
         self.export_button.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
         
-        self.merge_terms_button = ctk.CTkButton(
-            button_frame,
-            text="Merge Terms",
-            command=self.show_merge_terms,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            height=50,
-            fg_color=self.cute_colors["button_bg"],
-            text_color=self.cute_colors["text_primary"],
-            hover_color=self.cute_colors["accent"],
-            corner_radius=15
-        )
-        self.merge_terms_button.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
-        
         # Decorative elements
         for i, emoji in enumerate(["🌸", "💜", "🌸"]):
             ctk.CTkLabel(self.sidebar, 
@@ -2509,23 +2496,14 @@ class MergeTermsPage(ctk.CTkFrame):
                 "dropdown_hover": "#ffd6e0"
             }
     def get_years(self):
-        # Scan output_word_files for available years where both term1 and term2 files exist
+        # Scan output_word_files for available years
         years = set()
         if os.path.exists("output_word_files"):
-            files = os.listdir("output_word_files")
-            term1_years = set()
-            term2_years = set()
-            for fname in files:
-                if fname.startswith("COMBINED_") and fname.endswith("_all_months.docx"):
+            for fname in os.listdir("output_word_files"):
+                if fname.startswith("COMBINED_") and "_term1_" in fname:
                     parts = fname.split("_")
                     if len(parts) > 2:
-                        year = parts[1]
-                        if f"COMBINED_{year}_term1_all_months.docx" in files:
-                            term1_years.add(year)
-                        if f"COMBINED_{year}_term2_all_months.docx" in files:
-                            term2_years.add(year)
-            # Only include years where both term1 and term2 exist
-            years = term1_years & term2_years
+                        years.add(parts[1])
         return sorted(years)
     def merge_terms(self):
         year = self.year_var.get()
@@ -2542,56 +2520,24 @@ class MergeTermsPage(ctk.CTkFrame):
         from excel_to_word import merge_with_win32com
         merged_name = f"COMBINED_{year}_BOTH_TERMS.docx"
         merged_path = os.path.join("output_word_files", merged_name)
-
-        # Spinner animation setup
-        loading_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-        loading_index = 0
-        self._loading_active = True
-        self.merge_button.configure(state="disabled")
-
-        def update_loading():
-            nonlocal loading_index
-            if hasattr(self, '_loading_active') and self._loading_active:
-                loading_char = loading_chars[loading_index]
-                self.status_label.configure(text=f"{loading_char} Merging terms...", text_color="#ffffff")
-                loading_index = (loading_index + 1) % len(loading_chars)
-                self.after(100, update_loading)
-        update_loading()
-
-        def do_merge():
-            import pythoncom
-            pythoncom.CoInitialize()
-            try:
-                try:
-                    ok = merge_with_win32com([path1, path2], merged_path)
-                    if ok:
-                        import tkinter.filedialog as filedialog
-                        save_path = filedialog.asksaveasfilename(
-                            title="Save Merged Word File",
-                            defaultextension=".docx",
-                            filetypes=[("Word Document", "*.docx")],
-                            initialfile=merged_name
-                        )
-                        if save_path:
-                            import shutil
-                            shutil.copy2(merged_path, save_path)
-                        msg = f"✅ Merged file created!"
-                        color = "green"
-                    else:
-                        msg = f"❌ Failed to merge files."
-                        color = "red"
-                except Exception as e:
-                    msg = f"❌ Error: {e}"
-                    color = "red"
-                def finish():
-                    self.status_label.configure(text=msg, text_color=color)
-                    self.merge_button.configure(state="normal")
-                    self._loading_active = False
-                self.after(0, finish)
-            finally:
-                pythoncom.CoUninitialize()
-        import threading
-        threading.Thread(target=do_merge, daemon=True).start()
+        try:
+            ok = merge_with_win32com([path1, path2], merged_path)
+            if ok:
+                import tkinter.filedialog as filedialog
+                save_path = filedialog.asksaveasfilename(
+                    title="Save Merged Word File",
+                    defaultextension=".docx",
+                    filetypes=[("Word Document", "*.docx")],
+                    initialfile=merged_name
+                )
+                if save_path:
+                    import shutil
+                    shutil.copy2(merged_path, save_path)
+                self.status_label.configure(text=f"✅ Merged file created!", text_color="green")
+            else:
+                self.status_label.configure(text=f"❌ Failed to merge files.", text_color="red")
+        except Exception as e:
+            self.status_label.configure(text=f"❌ Error: {e}", text_color="red")
 
 if __name__ == "__main__":
     # Always use dark mode
