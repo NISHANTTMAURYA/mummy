@@ -7,9 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 from copy import copy
 from excel_to_word import process_single_excel_file, process_dual_excel_files
-import tkinter.filedialog as filedialog
-import threading  # <-- Add this import
-import pythoncom
+import tkinter.filedialog
 
 class ExcelPage(ctk.CTkFrame):
     def __init__(self, parent):
@@ -1901,10 +1899,6 @@ class ExportWordPage(ctk.CTkFrame):
         
         # Set cute color scheme based on appearance mode
         self.update_colors()
-        
-        # Initialize selected files set and radio button variable
-        self.selected_files = set()
-        self.radio_var = tk.StringVar(value="")
 
         # --- Top: Export Section ---
         top_frame = ctk.CTkFrame(self, fg_color=self.colors["card_bg"], corner_radius=20)
@@ -1977,8 +1971,20 @@ class ExportWordPage(ctk.CTkFrame):
         self.scrollable_frame.grid_columnconfigure(0, weight=1)
 
         # Initialize
-        self.selected_file_var = tk.StringVar(value="")
+        self.selected_files = set()
         self.refresh_file_list()
+
+        # Progress bar for export
+        self.progress_bar = ctk.CTkProgressBar(
+            self,
+            width=400,
+            height=20,
+            corner_radius=10,
+            progress_color=self.colors["accent"],
+            fg_color=self.colors["bg_secondary"]
+        )
+        self.progress_bar.grid(row=2, column=0, pady=(0, 20))
+        self.progress_bar.grid_remove()  # Hide initially
 
     def update_colors(self):
         """Set color scheme based on appearance mode"""
@@ -2023,26 +2029,34 @@ class ExportWordPage(ctk.CTkFrame):
 
     def refresh_file_list(self):
         """Refresh the list of available Excel files"""
+        # Update colors in case appearance mode changed
+        self.update_colors()
+        
         # Clear existing widgets
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
-            
-        # Create container for files
-        files_container = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
-        files_container.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-        files_container.grid_columnconfigure(0, weight=1)
         
-        # Get list of Excel files
-        excel_files = [f for f in os.listdir("excel_copies") if f.endswith(".xlsx")]
-        if not excel_files:
-            ctk.CTkLabel(
-                files_container,
-                text="No Excel files found in excel_copies folder",
-                font=ctk.CTkFont(size=14),
-                text_color="#ffffff"
-            ).grid(row=0, column=0, pady=20)
+        # Get all Excel files
+        if not os.path.exists("excel_copies"):
             return
             
+        # Get only valid Excel files, filtering out system files and temp files
+        all_files = os.listdir("excel_copies")
+        excel_files = [f for f in all_files if (
+            f.endswith(".xlsx") and  # Only Excel files
+            not f.startswith("~") and  # Not temp files
+            not f.startswith("$") and  # Not system files
+            not f.startswith(".")  # Not hidden files
+        )]
+        
+        # Sort files by name
+        excel_files.sort()
+        
+        # Create a parent frame for all file items
+        files_container = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
+        files_container.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        files_container.grid_columnconfigure(0, weight=1)
+        
         # Group files into compatible pairs and single files
         compatible_pairs = []
         single_files = []
@@ -2095,20 +2109,20 @@ class ExportWordPage(ctk.CTkFrame):
                 pair_frame.grid(row=row_idx, column=0, sticky="ew", pady=3, padx=5)
                 pair_frame.grid_columnconfigure(1, weight=1)
                 
-                # Radio button for the pair
-                radio = ctk.CTkRadioButton(
+                # Checkbox for the pair
+                checkbox_var = ctk.BooleanVar(value=(file1 in self.selected_files and file2 in self.selected_files))
+                checkbox = ctk.CTkCheckBox(
                     pair_frame,
                     text="",
-                    variable=self.radio_var,
-                    value=f"PAIR:{file1}|{file2}",
-                    command=lambda f1=file1, f2=file2: self._on_radio_select(f"PAIR:{f1}|{f2}"),
+                    variable=checkbox_var,
+                    command=lambda f1=file1, f2=file2, v=checkbox_var: self._toggle_pair_selection(f1, f2, v),
                     width=20,
                     height=20,
                     fg_color=self.colors["accent"],
                     hover_color=self.colors["accent_hover"],
                     border_color=self.colors["border"]
                 )
-                radio.grid(row=0, column=0, padx=(10, 5), pady=10)
+                checkbox.grid(row=0, column=0, padx=(10, 5), pady=10)
                 
                 # File pair info
                 info_frame = ctk.CTkFrame(pair_frame, fg_color="transparent")
@@ -2124,7 +2138,7 @@ class ExportWordPage(ctk.CTkFrame):
                     file1_frame,
                     text="📄",
                     font=ctk.CTkFont(size=16)
-                ).grid(row=0, column=0, padx=(0, 10))
+                ).grid(row=0, column=0, padx=(0, 5))
                 
                 ctk.CTkLabel(
                     file1_frame,
@@ -2142,7 +2156,7 @@ class ExportWordPage(ctk.CTkFrame):
                     file2_frame,
                     text="📄",
                     font=ctk.CTkFont(size=16)
-                ).grid(row=0, column=0, padx=(0, 10))
+                ).grid(row=0, column=0, padx=(0, 5))
                 
                 ctk.CTkLabel(
                     file2_frame,
@@ -2152,19 +2166,19 @@ class ExportWordPage(ctk.CTkFrame):
                 ).grid(row=0, column=1, sticky="w")
                 
                 # Open buttons
-                open_frame = ctk.CTkFrame(pair_frame, fg_color="transparent")
-                open_frame.grid(row=0, column=2, padx=10, pady=10)
+                btn_frame = ctk.CTkFrame(pair_frame, fg_color="transparent")
+                btn_frame.grid(row=0, column=2, padx=5)
                 
                 ctk.CTkButton(
-                    open_frame,
-                    text="Open Files",
-                    command=lambda f1=file1, f2=file2: self._open_file_pair(f1, f2),
-                    width=100,
-                    height=30,
+                    btn_frame,
+                    text="Open",
+                    width=60,
+                    height=24,
+                    font=ctk.CTkFont(size=12, weight="bold"),
                     fg_color=self.colors["accent"],
                     hover_color=self.colors["accent_hover"],
-                    corner_radius=10,
-                    text_color="#ffffff"
+                    corner_radius=8,
+                    command=lambda f1=file1, f2=file2: self._open_file_pair(f1, f2)
                 ).pack(pady=5)
                 
                 row_idx += 1
@@ -2190,53 +2204,56 @@ class ExportWordPage(ctk.CTkFrame):
                 row_frame.grid(row=row_idx, column=0, sticky="ew", pady=3, padx=5)
                 
                 # Configure row layout
-                row_frame.grid_columnconfigure(0, weight=0)  # Radio button
+                row_frame.grid_columnconfigure(0, weight=0)  # Checkbox
                 row_frame.grid_columnconfigure(1, weight=0)  # File icon
                 row_frame.grid_columnconfigure(2, weight=1)  # Filename
                 row_frame.grid_columnconfigure(3, weight=0)  # Open button
                 
-                # Radio button for selection
-                radio = ctk.CTkRadioButton(
+                # Checkbox for selection
+                checkbox_var = ctk.BooleanVar(value=file in self.selected_files)
+                checkbox = ctk.CTkCheckBox(
                     row_frame,
                     text="",
-                    variable=self.radio_var,
-                    value=f"SINGLE:{file}",
-                    command=lambda f=file: self._on_radio_select(f"SINGLE:{f}"),
+                    variable=checkbox_var,
+                    command=lambda f=file, v=checkbox_var: self._toggle_file_selection(f, v),
                     width=20,
                     height=20,
                     fg_color=self.colors["accent"],
                     hover_color=self.colors["accent_hover"],
                     border_color=self.colors["border"]
                 )
-                radio.grid(row=0, column=0, padx=(10, 5), pady=10)
+                checkbox.grid(row=0, column=0, padx=(10, 5), pady=10)
                 
                 # File icon
-                ctk.CTkLabel(
+                file_icon = ctk.CTkLabel(
                     row_frame,
                     text="📄",
-                    font=ctk.CTkFont(size=16)
-                ).grid(row=0, column=1, padx=(0, 10), pady=10)
+                    font=ctk.CTkFont(size=18)
+                )
+                file_icon.grid(row=0, column=1, padx=(5, 10), pady=10)
                 
                 # Filename
-                ctk.CTkLabel(
+                filename_label = ctk.CTkLabel(
                     row_frame,
                     text=file,
                     font=ctk.CTkFont(size=14),
                     text_color="#ffffff"
-                ).grid(row=0, column=2, sticky="w", pady=10)
+                )
+                filename_label.grid(row=0, column=2, padx=10, pady=10, sticky="w")
                 
                 # Open button
-                ctk.CTkButton(
+                open_btn = ctk.CTkButton(
                     row_frame,
                     text="Open",
-                    command=lambda f=file: self._open_single_file(f),
-                    width=80,
-                    height=30,
+                    width=60,
+                    height=24,
+                    font=ctk.CTkFont(size=12, weight="bold"),
                     fg_color=self.colors["accent"],
                     hover_color=self.colors["accent_hover"],
-                    corner_radius=10,
-                    text_color="#ffffff"
-                ).grid(row=0, column=3, padx=10, pady=10)
+                    corner_radius=8,
+                    command=lambda f=file: self._open_single_file(f)
+                )
+                open_btn.grid(row=0, column=3, padx=(5, 8), pady=6, sticky="e")
                 
                 row_idx += 1
 
@@ -2288,107 +2305,21 @@ class ExportWordPage(ctk.CTkFrame):
             
         return True
 
-    def _on_radio_select(self, value):
-        """Handle radio button selection"""
-        self.selected_files = set()
-        if value:
-            # If it's a pair, value is 'PAIR:file1|file2', else 'SINGLE:file'
-            if value.startswith('PAIR:'):
-                files = value[5:].split('|')
-                self.selected_files.update(files)
-            elif value.startswith('SINGLE:'):
-                self.selected_files.add(value[7:])
+    def _toggle_file_selection(self, filename, checkbox_var):
+        """Toggle file selection state"""
+        if checkbox_var.get():
+            self.selected_files.add(filename)
+        else:
+            self.selected_files.discard(filename)
 
-    def export_to_word(self):
-        """Export selected Excel files to Word"""
-        if not self.selected_files:
-            self.status_label.configure(text="Please select at least one Excel file", text_color="red")
-            return
-        
-        # Show loading animation in status label
-        loading_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-        loading_index = 0
-        
-        def update_loading():
-            nonlocal loading_index
-            if hasattr(self, '_loading_active') and self._loading_active:
-                loading_char = loading_chars[loading_index]
-                self.status_label.configure(text=f"{loading_char} Exporting files...", text_color="#ffffff")
-                loading_index = (loading_index + 1) % len(loading_chars)
-                self.after(100, update_loading)
-        
-        self._loading_active = True
-        self.export_button.configure(state="disabled")
-        update_loading()
-
-        def do_export():
-            import pythoncom
-            pythoncom.CoInitialize()
-            try:
-                generated_files = []
-                try:
-                    # Group selected files into compatible pairs and single files
-                    selected_files = list(self.selected_files)
-                    processed_files = set()
-                    
-                    # First process compatible pairs
-                    for i, file1 in enumerate(selected_files):
-                        if file1 in processed_files:
-                            continue
-                        file1_info = self._parse_filename(file1)
-                        for file2 in selected_files[i+1:]:
-                            if file2 in processed_files:
-                                continue
-                            file2_info = self._parse_filename(file2)
-                            if self._are_files_compatible(file1_info, file2_info):
-                                excel_path1 = os.path.join("excel_copies", file1)
-                                excel_path2 = os.path.join("excel_copies", file2)
-                                out_path = process_dual_excel_files(excel_path1, excel_path2)
-                                if out_path:
-                                    generated_files.append(out_path)
-                                processed_files.add(file1)
-                                processed_files.add(file2)
-                                break
-                            else:
-                                if file1 not in processed_files:
-                                    excel_path = os.path.join("excel_copies", file1)
-                                    out_path = process_single_excel_file(excel_path)
-                                    if out_path:
-                                        generated_files.append(out_path)
-                                    processed_files.add(file1)
-                    # Process any remaining single files
-                    for file in selected_files:
-                        if file not in processed_files:
-                            excel_path = os.path.join("excel_copies", file)
-                            out_path = process_single_excel_file(excel_path)
-                            if out_path:
-                                generated_files.append(out_path)
-                                processed_files.add(file)
-                    self.status_label.configure(text="✅ Export completed successfully!", text_color="green")
-                except Exception as e:
-                    self.status_label.configure(text=f"❌ Error: {str(e)}", text_color="red")
-                
-                # Prompt user to save each generated file
-                for out_path in generated_files:
-                    if out_path and os.path.exists(out_path):
-                        filetypes = [("Word Document", "*.docx")]
-                        initialfile = os.path.basename(out_path)
-                        save_path = filedialog.asksaveasfilename(
-                            title="Save Exported Word File",
-                            defaultextension=".docx",
-                            filetypes=filetypes,
-                            initialfile=initialfile
-                        )
-                        if save_path:
-                            try:
-                                shutil.copy2(out_path, save_path)
-                            except Exception as e:
-                                self.status_label.configure(text=f"❌ Error saving file: {str(e)}", text_color="red")
-                                continue
-            finally:
-                pythoncom.CoUninitialize()
-        # Run export in a background thread
-        threading.Thread(target=do_export, daemon=True).start()
+    def _toggle_pair_selection(self, file1, file2, checkbox_var):
+        """Toggle selection state for a file pair"""
+        if checkbox_var.get():
+            self.selected_files.add(file1)
+            self.selected_files.add(file2)
+        else:
+            self.selected_files.discard(file1)
+            self.selected_files.discard(file2)
 
     def _open_single_file(self, filename):
         """Open a single Excel file"""
@@ -2401,6 +2332,91 @@ class ExportWordPage(ctk.CTkFrame):
         file2_path = os.path.join("excel_copies", file2)
         webbrowser.open(f"file://{os.path.abspath(file1_path)}")
         webbrowser.open(f"file://{os.path.abspath(file2_path)}")
+
+    def export_to_word(self):
+        """Export selected Excel files to Word with progress bar and save dialog"""
+        if not self.selected_files:
+            self.status_label.configure(text="Please select at least one Excel file", text_color="red")
+            return
+        try:
+            self.status_label.configure(text="Processing files...", text_color="#ffffff")
+            self.export_button.configure(state="disabled")
+            self.progress_bar.set(0)
+            self.progress_bar.grid()  # Show progress bar
+            self.update_idletasks()
+
+            selected_files = list(self.selected_files)
+            processed_files = set()
+            output_files = []
+            total = len(selected_files)
+            step = 1 / max(total, 1)
+            progress = 0
+
+            # First process compatible pairs
+            for i, file1 in enumerate(selected_files):
+                if file1 in processed_files:
+                    continue
+                file1_info = self._parse_filename(file1)
+                for file2 in selected_files[i+1:]:
+                    if file2 in processed_files:
+                        continue
+                    file2_info = self._parse_filename(file2)
+                    if self._are_files_compatible(file1_info, file2_info):
+                        excel_path1 = os.path.join("excel_copies", file1)
+                        excel_path2 = os.path.join("excel_copies", file2)
+                        output_path = process_dual_excel_files(excel_path1, excel_path2)
+                        output_files.append(output_path)
+                        processed_files.add(file1)
+                        processed_files.add(file2)
+                        progress += step * 2
+                        self.progress_bar.set(min(progress, 1.0))
+                        self.update_idletasks()
+                        break
+                else:
+                    if file1 not in processed_files:
+                        excel_path = os.path.join("excel_copies", file1)
+                        output_path = process_single_excel_file(excel_path)
+                        output_files.append(output_path)
+                        processed_files.add(file1)
+                        progress += step
+                        self.progress_bar.set(min(progress, 1.0))
+                        self.update_idletasks()
+
+            # Process any remaining single files
+            for file in selected_files:
+                if file not in processed_files:
+                    excel_path = os.path.join("excel_copies", file)
+                    output_path = process_single_excel_file(excel_path)
+                    output_files.append(output_path)
+                    processed_files.add(file)
+                    progress += step
+                    self.progress_bar.set(min(progress, 1.0))
+                    self.update_idletasks()
+
+            self.progress_bar.set(1.0)
+            self.update_idletasks()
+
+            # Ask user where to save each generated file
+            for output_path in output_files:
+                if os.path.exists(output_path):
+                    save_path = tkinter.filedialog.asksaveasfilename(
+                        title="Save Word File As",
+                        defaultextension=".docx",
+                        initialfile=os.path.basename(output_path),
+                        filetypes=[("Word Document", "*.docx")]
+                    )
+                    if save_path:
+                        try:
+                            shutil.copy2(output_path, save_path)
+                        except Exception as e:
+                            self.status_label.configure(text=f"Error saving file: {e}", text_color="red")
+                            continue
+            self.status_label.configure(text="✅ Export completed successfully!", text_color="green")
+        except Exception as e:
+            self.status_label.configure(text=f"❌ Error: {str(e)}", text_color="red")
+        finally:
+            self.export_button.configure(state="normal")
+            self.progress_bar.grid_remove()
 
 if __name__ == "__main__":
     # Always use dark mode

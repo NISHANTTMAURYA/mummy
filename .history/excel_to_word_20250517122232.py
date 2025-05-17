@@ -587,276 +587,58 @@ def process_excel_files(excel_folder="excel_copies", template_path="executive_su
                         logger.error(f"Error cleaning up CSV file: {e}")
 
 def process_single_excel_file(excel_path, template_path="executive_summary_template.docx", output_folder="output_word_files"):
-    """Process a single Excel file end-to-end."""
-    if not os.path.exists(excel_path):
-        logger.error(f"Excel file not found: {excel_path}")
-        return
-    if not os.path.exists(template_path):
-        logger.error(f"Template file not found: {template_path}")
-        return
-    
-    logger.info(f"Processing single Excel file: {excel_path}")
-    force_excel_recalc_and_save(excel_path)
-    csv_path = convert_excel_to_csv(excel_path)
-    
-    if not csv_path:
-        return
-        
+    """Process a single Excel file and return the path to the generated Word file"""
     try:
-        # Create output folder if it doesn't exist
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
+        # Create output directory if it doesn't exist
+        os.makedirs(output_folder, exist_ok=True)
         
-        # Create month-specific folder
-        month_folder = os.path.join(output_folder, "month_files")
-        if not os.path.exists(month_folder):
-            os.makedirs(month_folder)
+        # Convert Excel to CSV
+        csv_path = convert_excel_to_csv(excel_path)
         
-        # Get file info
-        file_info = parse_filename(excel_path)
-        if not file_info:
-            logger.error(f"Could not parse information from filename: {excel_path}")
-            return
-            
-        # Process the file
-        with open(csv_path, 'r', newline='', encoding='utf-8-sig') as csvfile:
-            reader = csv.reader(csvfile)
-            
-            # First row contains months
-            header_row = next(reader)
-            # Second row contains column labels
-            field_row = next(reader)
-            
-            # Map column indices for each month
-            month_field_map = parse_month_field_columns(header_row, field_row)
-            
-            # Store all data rows
-            all_data = []
-            for row in reader:
-                if row and len(row) > 0 and row[0].strip():
-                    all_data.append(row)
-                    if row[0].strip().upper() == 'TOTAL':
-                        break
-            
-            # Process each month
-            month_files = []
-            for month_name in month_field_map.keys():
-                if month_name == 'TOTAL':
-                    continue  # Skip TOTAL as it will be processed last
-                    
-                month_file = os.path.join(month_folder, f"{month_name}_{file_info['year_range']}.docx")
-                success = process_single_month(
-                    template_path=template_path,
-                    month_name=month_name,
-                    data_rows1=all_data,
-                    data_rows2=all_data,  # Use same data for both
-                    columns1=month_field_map[month_name],
-                    columns2=month_field_map[month_name],  # Use same columns for both
-                    file_info1=file_info,
-                    file_info2=file_info,  # Use same info for both
-                    output_path=month_file
-                )
-                if success:
-                    month_files.append(month_file)
-            
-            # Process TOTAL page last
-            if 'TOTAL' in month_field_map:
-                total_file = os.path.join(month_folder, f"TOTAL_{file_info['year_range']}.docx")
-                success = process_single_month(
-                    template_path=template_path,
-                    month_name='TOTAL',
-                    data_rows1=all_data,
-                    data_rows2=all_data,
-                    columns1=month_field_map['TOTAL'],
-                    columns2=month_field_map['TOTAL'],
-                    file_info1=file_info,
-                    file_info2=file_info,
-                    output_path=total_file
-                )
-                if success:
-                    month_files.append(total_file)
-            
-            # Combine all files
-            if month_files:
-                # Move TOTAL file to the end if present
-                total_file = None
-                for f in month_files:
-                    if os.path.basename(f).startswith('TOTAL'):
-                        total_file = f
-                if total_file:
-                    month_files = [f for f in month_files if f != total_file] + [total_file]
-                combined_filename = f"{file_info['original_std']}_{file_info['year_range']}_term{file_info['term']}_all_months.docx"
-                combined_path = os.path.join(output_folder, combined_filename)
-                
-                if WIN32COM_AVAILABLE:
-                    merge_with_win32com(month_files, combined_path)
-                else:
-                    instruction_file = os.path.join(output_folder, f"{combined_filename}_INSTRUCTIONS.txt")
-                    with open(instruction_file, 'w') as f:
-                        f.write("INSTRUCTIONS FOR COMBINING THE MONTH FILES\n")
-                        f.write("===========================================\n\n")
-                        f.write("Please follow these steps to combine the month files manually:\n\n")
-                        f.write("1. Open the first month file\n")
-                        f.write("2. For each additional month file:\n")
-                        f.write("   a. Place cursor at the end of the document\n")
-                        f.write("   b. Insert -> Page Break\n")
-                        f.write("   c. Insert -> Object -> Text from file\n")
-                        f.write("   d. Select the next month file\n")
-                        f.write("3. Save the combined document\n\n")
-                        f.write("Individual month files are located in the 'month_files' folder:\n\n")
-                        
-                        for i, file_path in enumerate(month_files, 1):
-                            f.write(f"{i}. {os.path.basename(file_path)}\n")
-                
-                logger.info(f"Combined file saved as: {combined_path}")
-                return combined_path
-            else:
-                logger.error("No month files were created to combine")
-                return None
-    
-    finally:
-        # Cleanup CSV file
-        try:
-            if csv_path:
-                os.unlink(csv_path)
-                logger.info(f"Cleaned up CSV file: {csv_path}")
-        except Exception as e:
-            logger.error(f"Error cleaning up CSV file: {e}")
-
-def are_files_compatible(file1_info, file2_info):
-    """Check if two files are compatible for combined processing."""
-    if not file1_info or not file2_info:
-        logger.error("One or both file info objects are None")
-        return False
-    
-    logger.info(f"File 1 info: {file1_info}")
-    logger.info(f"File 2 info: {file2_info}")
-    
-    # Check if year range and term are same
-    if file1_info['year_range'] != file2_info['year_range']:
-        logger.error(f"Year range mismatch: {file1_info['year_range']} != {file2_info['year_range']}")
-        return False
-    
-    if file1_info['term'] != file2_info['term']:
-        logger.error(f"Term mismatch: {file1_info['term']} != {file2_info['term']}")
-        return False
-    
-    # Check if standards are different
-    if file1_info['original_std'] == file2_info['original_std']:
-        logger.error(f"Same standard found: {file1_info['original_std']}")
-        return False
-    
-    # Check if one is FYJC and other is SYJC
-    standards = {file1_info['original_std'], file2_info['original_std']}
-    if standards != {'FYJC', 'SYJC'}:
-        logger.error(f"Invalid standards combination: {standards}")
-        return False
-    
-    logger.info("Files are compatible for processing")
-    return True
+        # Parse filename to get year, term, and standard
+        file_info = parse_filename(os.path.basename(excel_path))
+        
+        # Create output filename
+        output_filename = f"executive_summary_{file_info['year']}_{file_info['term']}_{file_info['std']}.docx"
+        output_path = os.path.join(output_folder, output_filename)
+        
+        # Create the Word document
+        create_multi_month_document(csv_path, None, template_path, output_folder)
+        
+        # Return the path to the generated file
+        return output_path
+        
+    except Exception as e:
+        logger.error(f"Error processing single file: {e}")
+        raise
 
 def process_dual_excel_files(excel_path1, excel_path2, template_path="executive_summary_template.docx", output_folder="output_word_files"):
-    """Process two Excel files (FYJC and SYJC) and combine their data into a single Word file."""
-    if not os.path.exists(excel_path1) or not os.path.exists(excel_path2):
-        logger.error("One or both Excel files not found")
-        return
-    
-    if not os.path.exists(template_path):
-        logger.error(f"Template file not found: {template_path}")
-        return
-    
-    # Parse filenames to get file info BEFORE any Excel/CSV processing
-    file1_info = parse_filename(excel_path1)
-    file2_info = parse_filename(excel_path2)
-    
-    if not are_files_compatible(file1_info, file2_info):
-        logger.error("Files are not compatible for combined processing")
-        return
-    
-    logger.info(f"Processing dual Excel files: {excel_path1} and {excel_path2}")
-    
-    # Process first file
-    force_excel_recalc_and_save(excel_path1)
-    csv_path1 = convert_excel_to_csv(excel_path1)
-    
-    # Process second file
-    force_excel_recalc_and_save(excel_path2)
-    csv_path2 = convert_excel_to_csv(excel_path2)
-    
+    """Process two compatible Excel files and return the path to the generated Word file"""
     try:
-        # Create output folder if it doesn't exist
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
+        # Create output directory if it doesn't exist
+        os.makedirs(output_folder, exist_ok=True)
         
-        # Create month-specific folder
-        month_folder = os.path.join(output_folder, "month_files")
-        if not os.path.exists(month_folder):
-            os.makedirs(month_folder)
+        # Convert both Excel files to CSV
+        csv_path1 = convert_excel_to_csv(excel_path1)
+        csv_path2 = convert_excel_to_csv(excel_path2)
         
-        # Process both files together
-        logger.info("Processing both files together...")
+        # Parse filenames to get year, term, and standards
+        file_info1 = parse_filename(os.path.basename(excel_path1))
+        file_info2 = parse_filename(os.path.basename(excel_path2))
+        
+        # Create output filename
+        output_filename = f"executive_summary_{file_info1['year']}_{file_info1['term']}_combined.docx"
+        output_path = os.path.join(output_folder, output_filename)
+        
+        # Create the Word document
         create_multi_month_document(csv_path1, csv_path2, template_path, output_folder)
         
-        # Combine the files
-        combined_filename = f"COMBINED_{file1_info['year_range']}_term{file1_info['term']}_all_months.docx"
-        combined_path = os.path.join(output_folder, combined_filename)
+        # Return the path to the generated file
+        return output_path
         
-        # Get all month files and sort them by month order
-        month_order = ['JUNE', 'JULY', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC', 'JAN', 'FEB', 'MAR', 'APR', 'MAY']
-        month_files = []
-        total_file = None
-        
-        for file in os.listdir(month_folder):
-            if file.endswith('.docx'):
-                file_path = os.path.join(month_folder, file)
-                if file.startswith('TOTAL'):
-                    total_file = file_path
-                else:
-                    month_name = file.split('_')[0].upper()
-                    if month_name in month_order:
-                        month_files.append((month_order.index(month_name), file_path))
-        
-        # Sort files by month order
-        month_files.sort(key=lambda x: x[0])
-        month_files = [x[1] for x in month_files]  # Extract just the file paths
-        
-        # Add TOTAL file at the end if it exists
-        if total_file:
-            month_files.append(total_file)
-        
-        if WIN32COM_AVAILABLE:
-            merge_with_win32com(month_files, combined_path)
-        else:
-            instruction_file = os.path.join(output_folder, f"{combined_filename}_INSTRUCTIONS.txt")
-            with open(instruction_file, 'w') as f:
-                f.write("INSTRUCTIONS FOR COMBINING THE MONTH FILES\n")
-                f.write("===========================================\n\n")
-                f.write("Please follow these steps to combine the month files manually:\n\n")
-                f.write("1. Open the first month file\n")
-                f.write("2. For each additional month file:\n")
-                f.write("   a. Place cursor at the end of the document\n")
-                f.write("   b. Insert -> Page Break\n")
-                f.write("   c. Insert -> Object -> Text from file\n")
-                f.write("   d. Select the next month file\n")
-                f.write("3. Save the combined document\n\n")
-                f.write("Individual month files are located in the 'month_files' folder:\n\n")
-                
-                for i, file_path in enumerate(month_files, 1):
-                    f.write(f"{i}. {os.path.basename(file_path)}\n")
-        
-        logger.info(f"Combined file saved as: {combined_path}")
-        return combined_path
-        
-    finally:
-        # Cleanup CSV files
-        try:
-            if csv_path1:
-                os.unlink(csv_path1)
-            if csv_path2:
-                os.unlink(csv_path2)
-            logger.info("Cleaned up CSV files")
-        except Exception as e:
-            logger.error(f"Error cleaning up CSV files: {e}")
+    except Exception as e:
+        logger.error(f"Error processing dual files: {e}")
+        raise
 
 # Example usage for testing
 if __name__ == "__main__":

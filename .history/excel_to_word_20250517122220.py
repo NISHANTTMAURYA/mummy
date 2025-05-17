@@ -709,10 +709,8 @@ def process_single_excel_file(excel_path, template_path="executive_summary_templ
                             f.write(f"{i}. {os.path.basename(file_path)}\n")
                 
                 logger.info(f"Combined file saved as: {combined_path}")
-                return combined_path
             else:
                 logger.error("No month files were created to combine")
-                return None
     
     finally:
         # Cleanup CSV file
@@ -845,7 +843,6 @@ def process_dual_excel_files(excel_path1, excel_path2, template_path="executive_
                     f.write(f"{i}. {os.path.basename(file_path)}\n")
         
         logger.info(f"Combined file saved as: {combined_path}")
-        return combined_path
         
     finally:
         # Cleanup CSV files

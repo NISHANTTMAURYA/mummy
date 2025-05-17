@@ -8,8 +8,6 @@ from tkinter import ttk
 from copy import copy
 from excel_to_word import process_single_excel_file, process_dual_excel_files
 import tkinter.filedialog as filedialog
-import threading  # <-- Add this import
-import pythoncom
 
 class ExcelPage(ctk.CTkFrame):
     def __init__(self, parent):
@@ -2305,90 +2303,131 @@ class ExportWordPage(ctk.CTkFrame):
             self.status_label.configure(text="Please select at least one Excel file", text_color="red")
             return
         
-        # Show loading animation in status label
-        loading_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-        loading_index = 0
+        # Show modal progress dialog
+        progress_win = tk.Toplevel(self)
+        progress_win.title("Exporting...")
+        progress_win.geometry("350x120")
+        progress_win.transient(self.winfo_toplevel())
+        progress_win.grab_set()
+        progress_win.resizable(False, False)
         
-        def update_loading():
-            nonlocal loading_index
-            if hasattr(self, '_loading_active') and self._loading_active:
-                loading_char = loading_chars[loading_index]
-                self.status_label.configure(text=f"{loading_char} Exporting files...", text_color="#ffffff")
-                loading_index = (loading_index + 1) % len(loading_chars)
-                self.after(100, update_loading)
+        # Create a frame for better organization
+        progress_frame = ctk.CTkFrame(progress_win, fg_color="transparent")
+        progress_frame.pack(expand=True, fill="both", padx=20, pady=20)
         
-        self._loading_active = True
+        # Status label with cute styling
+        progress_label = ctk.CTkLabel(
+            progress_frame,
+            text="Exporting, please wait...",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color="#ffffff"
+        )
+        progress_label.pack(pady=(0, 10))
+        
+        # Progress bar with cute styling
+        progress_bar = ctk.CTkProgressBar(
+            progress_frame,
+            width=300,
+            height=20,
+            corner_radius=10,
+            progress_color="#b76edc",
+            fg_color="#473960"
+        )
+        progress_bar.pack(pady=10)
+        progress_bar.set(0)
+        
+        # File counter label
+        file_counter = ctk.CTkLabel(
+            progress_frame,
+            text="Processing...",
+            font=ctk.CTkFont(size=12),
+            text_color="#ffffff"
+        )
+        file_counter.pack(pady=(5, 0))
+        
+        progress_win.update()
+        self.status_label.configure(text="Processing files...", text_color="#ffffff")
         self.export_button.configure(state="disabled")
-        update_loading()
+        self.update_idletasks()
 
-        def do_export():
-            import pythoncom
-            pythoncom.CoInitialize()
-            try:
-                generated_files = []
-                try:
-                    # Group selected files into compatible pairs and single files
-                    selected_files = list(self.selected_files)
-                    processed_files = set()
-                    
-                    # First process compatible pairs
-                    for i, file1 in enumerate(selected_files):
-                        if file1 in processed_files:
-                            continue
-                        file1_info = self._parse_filename(file1)
-                        for file2 in selected_files[i+1:]:
-                            if file2 in processed_files:
-                                continue
-                            file2_info = self._parse_filename(file2)
-                            if self._are_files_compatible(file1_info, file2_info):
-                                excel_path1 = os.path.join("excel_copies", file1)
-                                excel_path2 = os.path.join("excel_copies", file2)
-                                out_path = process_dual_excel_files(excel_path1, excel_path2)
-                                if out_path:
-                                    generated_files.append(out_path)
-                                processed_files.add(file1)
-                                processed_files.add(file2)
-                                break
-                            else:
-                                if file1 not in processed_files:
-                                    excel_path = os.path.join("excel_copies", file1)
-                                    out_path = process_single_excel_file(excel_path)
-                                    if out_path:
-                                        generated_files.append(out_path)
-                                    processed_files.add(file1)
-                    # Process any remaining single files
-                    for file in selected_files:
-                        if file not in processed_files:
-                            excel_path = os.path.join("excel_copies", file)
-                            out_path = process_single_excel_file(excel_path)
-                            if out_path:
-                                generated_files.append(out_path)
-                                processed_files.add(file)
-                    self.status_label.configure(text="✅ Export completed successfully!", text_color="green")
-                except Exception as e:
-                    self.status_label.configure(text=f"❌ Error: {str(e)}", text_color="red")
-                
-                # Prompt user to save each generated file
-                for out_path in generated_files:
-                    if out_path and os.path.exists(out_path):
-                        filetypes = [("Word Document", "*.docx")]
-                        initialfile = os.path.basename(out_path)
-                        save_path = filedialog.asksaveasfilename(
-                            title="Save Exported Word File",
-                            defaultextension=".docx",
-                            filetypes=filetypes,
-                            initialfile=initialfile
-                        )
-                        if save_path:
-                            try:
-                                shutil.copy2(out_path, save_path)
-                            except Exception as e:
-                                self.status_label.configure(text=f"❌ Error saving file: {str(e)}", text_color="red")
-                                continue
-            finally:
-                pythoncom.CoUninitialize()
-        # Run export in a background thread
-        threading.Thread(target=do_export, daemon=True).start()
+        # Indeterminate progress bar animation
+        self._progress_animating = True
+        def animate_progress():
+            if not getattr(self, '_progress_animating', False):
+                return
+            current = getattr(progress_bar, '_current_value', 0)
+            next_val = current + 0.03
+            if next_val > 1:
+                next_val = 0
+            progress_bar.set(next_val)
+            progress_win.after(30, animate_progress)
+        animate_progress()
+        
+        generated_files = []
+        try:
+            # Group selected files into compatible pairs and single files
+            selected_files = list(self.selected_files)
+            processed_files = set()
+            
+            # First process compatible pairs
+            for i, file1 in enumerate(selected_files):
+                if file1 in processed_files:
+                    continue
+                file1_info = self._parse_filename(file1)
+                for file2 in selected_files[i+1:]:
+                    if file2 in processed_files:
+                        continue
+                    file2_info = self._parse_filename(file2)
+                    if self._are_files_compatible(file1_info, file2_info):
+                        excel_path1 = os.path.join("excel_copies", file1)
+                        excel_path2 = os.path.join("excel_copies", file2)
+                        out_path = process_dual_excel_files(excel_path1, excel_path2)
+                        if out_path:
+                            generated_files.append(out_path)
+                        processed_files.add(file1)
+                        processed_files.add(file2)
+                        break
+                else:
+                    if file1 not in processed_files:
+                        excel_path = os.path.join("excel_copies", file1)
+                        out_path = process_single_excel_file(excel_path)
+                        if out_path:
+                            generated_files.append(out_path)
+                        processed_files.add(file1)
+            # Process any remaining single files
+            for file in selected_files:
+                if file not in processed_files:
+                    excel_path = os.path.join("excel_copies", file)
+                    out_path = process_single_excel_file(excel_path)
+                    if out_path:
+                        generated_files.append(out_path)
+                        processed_files.add(file)
+            self.status_label.configure(text="✅ Export completed successfully!", text_color="green")
+        except Exception as e:
+            self.status_label.configure(text=f"❌ Error: {str(e)}", text_color="red")
+        finally:
+            self.export_button.configure(state="normal")
+            self._progress_animating = False
+            progress_win.grab_release()
+            progress_win.destroy()
+        
+        # Prompt user to save each generated file
+        for out_path in generated_files:
+            if out_path and os.path.exists(out_path):
+                filetypes = [("Word Document", "*.docx")]
+                initialfile = os.path.basename(out_path)
+                save_path = filedialog.asksaveasfilename(
+                    title="Save Exported Word File",
+                    defaultextension=".docx",
+                    filetypes=filetypes,
+                    initialfile=initialfile
+                )
+                if save_path:
+                    try:
+                        shutil.copy2(out_path, save_path)
+                    except Exception as e:
+                        self.status_label.configure(text=f"❌ Error saving file: {str(e)}", text_color="red")
+                        continue
 
     def _open_single_file(self, filename):
         """Open a single Excel file"""
