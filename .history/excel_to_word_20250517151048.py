@@ -220,8 +220,6 @@ def process_single_month(template_path, month_name, data_rows1, data_rows2, colu
             # For regular months, stop at TOTAL row
             elif month_name.upper() != 'TOTAL' and data_row1[0].strip().upper() == 'TOTAL':
                 break
-            # --- DEBUG LOGGING ---
-            logger.info(f"Writing row: SRNO={data_row1[0].strip()}, INITIALS={data_row1[1].strip() if len(data_row1) > 1 else ''}")
 
             table_row_idx = first_data_row + data_idx
             if table_row_idx >= len(target_table.rows):
