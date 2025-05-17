@@ -2050,11 +2050,11 @@ class ExportWordPage(ctk.CTkFrame):
         
         # First, try to find compatible pairs
         for i, file1 in enumerate(excel_files):
-            if file1 in [pair['files'][0] for pair in compatible_pairs] or file1 in [pair['files'][1] for pair in compatible_pairs]:
+            if file1 in [pair[0] for pair in compatible_pairs] or file1 in [pair[1] for pair in compatible_pairs]:
                 continue
             file1_info = self._parse_filename(file1)
             for file2 in excel_files[i+1:]:
-                if file2 in [pair['files'][0] for pair in compatible_pairs] or file2 in [pair['files'][1] for pair in compatible_pairs]:
+                if file2 in [pair[0] for pair in compatible_pairs] or file2 in [pair[1] for pair in compatible_pairs]:
                     continue
                 file2_info = self._parse_filename(file2)
                 if self._are_files_compatible(file1_info, file2_info):

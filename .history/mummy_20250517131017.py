@@ -2046,67 +2046,56 @@ class ExportWordPage(ctk.CTkFrame):
         # Group files into compatible pairs and single files
         compatible_pairs = []
         single_files = []
-        file_ctimes = {f: os.path.getctime(os.path.join('excel_copies', f)) for f in excel_files}
         
         # First, try to find compatible pairs
         for i, file1 in enumerate(excel_files):
-            if file1 in [pair['files'][0] for pair in compatible_pairs] or file1 in [pair['files'][1] for pair in compatible_pairs]:
+            if file1 in [pair[0] for pair in compatible_pairs] or file1 in [pair[1] for pair in compatible_pairs]:
                 continue
+                
             file1_info = self._parse_filename(file1)
+            
+            # Look for a compatible file
             for file2 in excel_files[i+1:]:
-                if file2 in [pair['files'][0] for pair in compatible_pairs] or file2 in [pair['files'][1] for pair in compatible_pairs]:
+                if file2 in [pair[0] for pair in compatible_pairs] or file2 in [pair[1] for pair in compatible_pairs]:
                     continue
+                    
                 file2_info = self._parse_filename(file2)
                 if self._are_files_compatible(file1_info, file2_info):
-                    # For sorting, use the latest ctime of the two files
-                    latest_ctime = max(file_ctimes[file1], file_ctimes[file2])
-                    # Also store year and term for output filename
-                    pair_info = {
-                        'files': (file1, file2),
-                        'latest_ctime': latest_ctime,
-                        'year': file1_info['year'],
-                        'term': file1_info['term']
-                    }
-                    compatible_pairs.append(pair_info)
+                    compatible_pairs.append((file1, file2))
                     break
             else:
+                # No compatible file found, add to single files
                 single_files.append(file1)
+        
         # Add remaining files to single files
         for file in excel_files:
-            if file not in [pair['files'][0] for pair in compatible_pairs] and file not in [pair['files'][1] for pair in compatible_pairs]:
+            if file not in [pair[0] for pair in compatible_pairs] and file not in [pair[1] for pair in compatible_pairs]:
                 if file not in single_files:
                     single_files.append(file)
-        # Sort compatible pairs by latest creation date (descending)
-        compatible_pairs.sort(key=lambda x: x['latest_ctime'], reverse=True)
+        
         # Display compatible pairs first
         row_idx = 0
         if compatible_pairs:
+            # Add a section header for compatible pairs
             header_frame = ctk.CTkFrame(files_container, fg_color=self.colors["card_bg"], corner_radius=10)
             header_frame.grid(row=row_idx, column=0, sticky="ew", pady=(0, 10), padx=5)
+            
             ctk.CTkLabel(
                 header_frame,
                 text="✨ Compatible File Pairs",
                 font=ctk.CTkFont(size=16, weight="bold"),
                 text_color="#ffffff"
             ).pack(padx=15, pady=10)
+            
             row_idx += 1
-            for pair in compatible_pairs:
-                file1, file2 = pair['files']
-                year = pair['year']
-                term = pair['term']
-                # Output filename label (above the pair)
-                output_name = f"Combined file: {year}_{term}" if year and term else "Combined file"
-                output_label = ctk.CTkLabel(
-                    files_container,
-                    text=output_name,
-                    font=ctk.CTkFont(size=14, weight="bold"),
-                    text_color=self.colors["accent"]
-                )
-                output_label.grid(row=row_idx, column=0, sticky="w", padx=20, pady=(0, 0))
-                row_idx += 1
+            
+            # Add each compatible pair
+            for file1, file2 in compatible_pairs:
                 pair_frame = ctk.CTkFrame(files_container, fg_color=self.colors["file_bg"], corner_radius=10)
                 pair_frame.grid(row=row_idx, column=0, sticky="ew", pady=3, padx=5)
                 pair_frame.grid_columnconfigure(1, weight=1)
+                
+                # Radio button for the pair
                 radio = ctk.CTkRadioButton(
                     pair_frame,
                     text="",
@@ -2120,39 +2109,52 @@ class ExportWordPage(ctk.CTkFrame):
                     border_color=self.colors["border"]
                 )
                 radio.grid(row=0, column=0, padx=(10, 5), pady=10)
+                
+                # File pair info
                 info_frame = ctk.CTkFrame(pair_frame, fg_color="transparent")
                 info_frame.grid(row=0, column=1, sticky="ew", padx=5)
                 info_frame.grid_columnconfigure(0, weight=1)
+                
+                # First file
                 file1_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
                 file1_frame.grid(row=0, column=0, sticky="ew", pady=2)
                 file1_frame.grid_columnconfigure(1, weight=1)
+                
                 ctk.CTkLabel(
                     file1_frame,
                     text="📄",
                     font=ctk.CTkFont(size=16)
                 ).grid(row=0, column=0, padx=(0, 10))
+                
                 ctk.CTkLabel(
                     file1_frame,
                     text=file1,
                     font=ctk.CTkFont(size=14),
                     text_color="#ffffff"
                 ).grid(row=0, column=1, sticky="w")
+                
+                # Second file
                 file2_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
                 file2_frame.grid(row=1, column=0, sticky="ew", pady=2)
                 file2_frame.grid_columnconfigure(1, weight=1)
+                
                 ctk.CTkLabel(
                     file2_frame,
                     text="📄",
                     font=ctk.CTkFont(size=16)
                 ).grid(row=0, column=0, padx=(0, 10))
+                
                 ctk.CTkLabel(
                     file2_frame,
                     text=file2,
                     font=ctk.CTkFont(size=14),
                     text_color="#ffffff"
                 ).grid(row=0, column=1, sticky="w")
+                
+                # Open buttons
                 open_frame = ctk.CTkFrame(pair_frame, fg_color="transparent")
                 open_frame.grid(row=0, column=2, padx=10, pady=10)
+                
                 ctk.CTkButton(
                     open_frame,
                     text="Open Files",
@@ -2164,6 +2166,7 @@ class ExportWordPage(ctk.CTkFrame):
                     corner_radius=10,
                     text_color="#ffffff"
                 ).pack(pady=5)
+                
                 row_idx += 1
         
         # Display single files

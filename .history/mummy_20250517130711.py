@@ -1321,170 +1321,250 @@ class CopyPage(ctk.CTkFrame):
         return ""
 
     def refresh_file_list(self):
-        """Refresh the list of available Excel files, filtering out system files."""
-        # Update colors in case appearance mode changed
-        self.update_colors()
-        
+        """Refresh the list of available Excel files"""
+        # Clear existing widgets
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
-        
-        # Get all files first (without filtering)
-        self.all_files = []
-        available_years = set(["All Years"])
-        available_terms = set(["All Terms"])
-        available_stds = set(["All Standards"])
-        
-        if os.path.exists("excel_copies"):
-            # Get only valid Excel files, filtering out system files and temp files
-            all_files = os.listdir("excel_copies")
-            excel_files = [f for f in all_files if (
-                f.endswith(".xlsx") and  # Only Excel files
-                not f.startswith("~") and  # Not temp files
-                not f.startswith("$") and  # Not system files
-                not f.startswith(".")  # Not hidden files
-            )]
             
-            # Extract metadata from filenames for filtering
-            for fname in excel_files:
-                file_info = self._parse_filename(fname)
-                self.all_files.append((fname, file_info))
+        # Create container for files
+        files_container = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
+        files_container.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        files_container.grid_columnconfigure(0, weight=1)
+        
+        # Get list of Excel files
+        excel_files = [f for f in os.listdir("excel_copies") if f.endswith(".xlsx")]
+        if not excel_files:
+            ctk.CTkLabel(
+                files_container,
+                text="No Excel files found in excel_copies folder",
+                font=ctk.CTkFont(size=14),
+                text_color="#ffffff"
+            ).grid(row=0, column=0, pady=20)
+            return
+            
+        # Group files into compatible pairs and single files
+        compatible_pairs = []
+        single_files = []
+        file_infos = {f: self._parse_filename(f) for f in excel_files}
+        
+        # Helper for sorting: (year, term) -> tuple for sorting
+        def sort_key(info):
+            # year: '2023-2024' -> 2023, term: 'term2' > 'term1'
+            year = info.get('year', '')
+            try:
+                year_val = int(year.split('-')[0])
+            except:
+                year_val = 0
+            term = info.get('term', '')
+            term_val = 2 if term == 'term2' else 1
+            return (-year_val, -term_val)
+        
+        # Find compatible pairs
+        used = set()
+        sorted_files = sorted(excel_files, key=lambda f: sort_key(file_infos[f]))
+        for i, file1 in enumerate(sorted_files):
+            if file1 in used:
+                continue
+            info1 = file_infos[file1]
+            for file2 in sorted_files[i+1:]:
+                if file2 in used:
+                    continue
+                info2 = file_infos[file2]
+                if self._are_files_compatible(info1, info2):
+                    # Always order FYJC first for consistency
+                    if info1['std'] == 'FYJC':
+                        compatible_pairs.append((file1, file2, info1))
+                    else:
+                        compatible_pairs.append((file2, file1, info2))
+                    used.add(file1)
+                    used.add(file2)
+                    break
+            else:
+                if file1 not in used:
+                    single_files.append(file1)
+                    used.add(file1)
+        # Add any remaining files to single_files
+        for file in sorted_files:
+            if file not in used and file not in single_files:
+                single_files.append(file)
+        
+        # Display compatible pairs first
+        row_idx = 0
+        if compatible_pairs:
+            # Add a section header for compatible pairs
+            header_frame = ctk.CTkFrame(files_container, fg_color=self.colors["card_bg"], corner_radius=10)
+            header_frame.grid(row=row_idx, column=0, sticky="ew", pady=(0, 10), padx=5)
+            
+            ctk.CTkLabel(
+                header_frame,
+                text="✨ Compatible File Pairs",
+                font=ctk.CTkFont(size=16, weight="bold"),
+                text_color="#ffffff"
+            ).pack(padx=15, pady=10)
+            
+            row_idx += 1
+            
+            # Add each compatible pair
+            for file1, file2, info in compatible_pairs:
+                # Output file name (combined)
+                combined_name = f"iso_excel_{info['year']}_{info['term']}.docx"
+                pair_frame = ctk.CTkFrame(files_container, fg_color=self.colors["file_bg"], corner_radius=10)
+                pair_frame.grid(row=row_idx, column=0, sticky="ew", pady=3, padx=5)
+                pair_frame.grid_columnconfigure(1, weight=1)
                 
-                # Collect available filter options
-                if file_info["year"]:
-                    available_years.add(file_info["year"])
-                if file_info["term"]:
-                    available_terms.add(file_info["term"])
-                if file_info["std"]:
-                    available_stds.add(file_info["std"])
-        
-        # Update filter dropdown options
-        self.year_filter.configure(values=sorted(list(available_years)))
-        self.term_filter.configure(values=sorted(list(available_terms)))
-        self.std_filter.configure(values=sorted(list(available_stds)))
-        
-        # Apply current filters
-        self._display_filtered_files()
-    
-    def _display_filtered_files(self):
-        """Display files based on current filter settings"""
-        # Get current filter values
-        year_filter = self.year_filter_var.get()
-        term_filter = self.term_filter_var.get()
-        std_filter = self.std_filter_var.get()
-        
-        # Clear current display
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
-        
-        # Apply filters
-        filtered_files = []
-        for fname, info in self.all_files:
-            # Check if the file matches all active filters
-            year_match = (year_filter == "All Years" or info["year"] == year_filter)
-            term_match = (term_filter == "All Terms" or info["term"] == term_filter)
-            std_match = (std_filter == "All Standards" or info["std"] == std_filter)
-            
-            if year_match and term_match and std_match:
-                filtered_files.append((fname, info))
-        
-        # Display the filtered files
-        if not filtered_files:
-            no_files_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
-            no_files_frame.grid(row=0, column=0, sticky="ew", pady=20, padx=20)
-            
-            # Add a cute empty state message with emoji
-            ctk.CTkLabel(no_files_frame, 
-                        text="📭", 
-                        font=ctk.CTkFont(size=40)).grid(row=0, column=0, pady=(20, 10))
-            
-            filter_message = "matching your filters" if year_filter != "All Years" or term_filter != "All Terms" or std_filter != "All Standards" else "found"
-            ctk.CTkLabel(no_files_frame, 
-                        text=f"No copies {filter_message}.", 
-                        font=ctk.CTkFont(size=18, weight="bold"),
-                        text_color=self.colors["accent"]).grid(row=1, column=0, pady=(10, 20))
-        else:
-            # Configure the scrollable frame
-            self.scrollable_frame.grid_columnconfigure(0, weight=1)
-            
-            # Create a parent frame for all file items to ensure proper layout
-            files_container = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
-            files_container.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
-            files_container.grid_columnconfigure(0, weight=1)
-            
-            for i, (fname, info) in enumerate(sorted(filtered_files), start=0):
-                file_path = os.path.abspath(os.path.join("excel_copies", fname))
+                # Combined file label
+                combined_label = ctk.CTkLabel(
+                    pair_frame,
+                    text=f"Combined file: {combined_name}",
+                    font=ctk.CTkFont(size=13, weight="bold"),
+                    text_color=self.colors["accent"]
+                )
+                combined_label.grid(row=0, column=0, columnspan=3, sticky="w", padx=10, pady=(8, 0))
                 
-                # Create a compact file row with hover effect
-                row_frame = ctk.CTkFrame(files_container, 
-                                       fg_color=self.colors["file_bg"], 
-                                       corner_radius=10)
-                row_frame.grid(row=i, column=0, sticky="ew", pady=3, padx=5)  # Reduced padding
+                # Radio button for the pair
+                radio = ctk.CTkRadioButton(
+                    pair_frame,
+                    text="",
+                    variable=self.radio_var,
+                    value=f"PAIR:{file1}|{file2}",
+                    command=lambda f1=file1, f2=file2: self._on_radio_select(f"PAIR:{f1}|{f2}"),
+                    width=20,
+                    height=20,
+                    fg_color=self.colors["accent"],
+                    hover_color=self.colors["accent_hover"],
+                    border_color=self.colors["border"]
+                )
+                radio.grid(row=1, column=0, padx=(10, 5), pady=10)
+                
+                # File pair info
+                info_frame = ctk.CTkFrame(pair_frame, fg_color="transparent")
+                info_frame.grid(row=1, column=1, sticky="ew", padx=5)
+                info_frame.grid_columnconfigure(0, weight=1)
+                
+                # First file
+                file1_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
+                file1_frame.grid(row=0, column=0, sticky="ew", pady=2)
+                file1_frame.grid_columnconfigure(1, weight=1)
+                
+                ctk.CTkLabel(
+                    file1_frame,
+                    text="📄",
+                    font=ctk.CTkFont(size=16)
+                ).grid(row=0, column=0, padx=(0, 10))
+                
+                ctk.CTkLabel(
+                    file1_frame,
+                    text=file1,
+                    font=ctk.CTkFont(size=14),
+                    text_color="#ffffff"
+                ).grid(row=0, column=1, sticky="w")
+                
+                # Second file
+                file2_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
+                file2_frame.grid(row=1, column=0, sticky="ew", pady=2)
+                file2_frame.grid_columnconfigure(1, weight=1)
+                
+                ctk.CTkLabel(
+                    file2_frame,
+                    text="📄",
+                    font=ctk.CTkFont(size=16)
+                ).grid(row=0, column=0, padx=(0, 10))
+                
+                ctk.CTkLabel(
+                    file2_frame,
+                    text=file2,
+                    font=ctk.CTkFont(size=14),
+                    text_color="#ffffff"
+                ).grid(row=0, column=1, sticky="w")
+                
+                # Open buttons
+                open_frame = ctk.CTkFrame(pair_frame, fg_color="transparent")
+                open_frame.grid(row=1, column=2, padx=10, pady=10)
+                
+                ctk.CTkButton(
+                    open_frame,
+                    text="Open Files",
+                    command=lambda f1=file1, f2=file2: self._open_file_pair(f1, f2),
+                    width=100,
+                    height=30,
+                    fg_color=self.colors["accent"],
+                    hover_color=self.colors["accent_hover"],
+                    corner_radius=10,
+                    text_color="#ffffff"
+                ).pack(pady=5)
+                
+                row_idx += 1
+        # Display single files
+        if single_files:
+            # Add a section header for single files
+            header_frame = ctk.CTkFrame(files_container, fg_color=self.colors["card_bg"], corner_radius=10)
+            header_frame.grid(row=row_idx, column=0, sticky="ew", pady=(10, 10), padx=5)
+            
+            ctk.CTkLabel(
+                header_frame,
+                text="📄 Single Files",
+                font=ctk.CTkFont(size=16, weight="bold"),
+                text_color="#ffffff"
+            ).pack(padx=15, pady=10)
+            
+            row_idx += 1
+            
+            # Add each single file
+            for file in single_files:
+                row_frame = ctk.CTkFrame(files_container, fg_color=self.colors["file_bg"], corner_radius=10)
+                row_frame.grid(row=row_idx, column=0, sticky="ew", pady=3, padx=5)
                 
                 # Configure row layout
-                row_frame.grid_columnconfigure(0, weight=0)  # File icon
-                row_frame.grid_columnconfigure(1, weight=0)  # Filename
-                row_frame.grid_columnconfigure(2, weight=1)  # Badges (expand to push button right)
-                row_frame.grid_columnconfigure(3, weight=0)  # Button fixed size
+                row_frame.grid_columnconfigure(0, weight=0)  # Radio button
+                row_frame.grid_columnconfigure(1, weight=0)  # File icon
+                row_frame.grid_columnconfigure(2, weight=1)  # Filename
+                row_frame.grid_columnconfigure(3, weight=0)  # Open button
                 
-                # File icon - more compact
-                file_icon = ctk.CTkLabel(row_frame, 
-                                      text="📄", 
-                                      font=ctk.CTkFont(size=18))
-                file_icon.grid(row=0, column=0, padx=(8, 5), pady=6, sticky="w")
+                # Radio button for selection
+                radio = ctk.CTkRadioButton(
+                    row_frame,
+                    text="",
+                    variable=self.radio_var,
+                    value=f"SINGLE:{file}",
+                    command=lambda f=file: self._on_radio_select(f"SINGLE:{f}"),
+                    width=20,
+                    height=20,
+                    fg_color=self.colors["accent"],
+                    hover_color=self.colors["accent_hover"],
+                    border_color=self.colors["border"]
+                )
+                radio.grid(row=0, column=0, padx=(10, 5), pady=10)
                 
-                # Filename - more compact
-                short_name = self._shorten_filename(fname)
-                file_name = ctk.CTkLabel(row_frame, 
-                                       text=short_name, 
-                                       font=ctk.CTkFont(size=14, weight="bold"),
-                                       text_color=self.colors["text_primary"])
-                file_name.grid(row=0, column=1, padx=(0, 8), pady=6, sticky="w")
+                # File icon
+                ctk.CTkLabel(
+                    row_frame,
+                    text="📄",
+                    font=ctk.CTkFont(size=16)
+                ).grid(row=0, column=1, padx=(0, 10), pady=10)
                 
-                # Badges container - compact horizontal layout
-                badges_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-                badges_frame.grid(row=0, column=2, padx=0, pady=6, sticky="w")
+                # Filename
+                ctk.CTkLabel(
+                    row_frame,
+                    text=file,
+                    font=ctk.CTkFont(size=14),
+                    text_color="#ffffff"
+                ).grid(row=0, column=2, sticky="w", pady=10)
                 
-                # Add badges in a row
-                badge_idx = 0
+                # Open button
+                ctk.CTkButton(
+                    row_frame,
+                    text="Open",
+                    command=lambda f=file: self._open_single_file(f),
+                    width=80,
+                    height=30,
+                    fg_color=self.colors["accent"],
+                    hover_color=self.colors["accent_hover"],
+                    corner_radius=10,
+                    text_color="#ffffff"
+                ).grid(row=0, column=3, padx=10, pady=10)
                 
-                if info["year"]:
-                    year_badge = self._create_badge(badges_frame, f"{info['year']}", "#3a2b4a")
-                    year_badge.grid(row=0, column=badge_idx, padx=(0, 3))
-                    badge_idx += 1
-                
-                if info["term"]:
-                    term_text = info["term"].replace("term", "T")  # Shorter text
-                    term_badge = self._create_badge(badges_frame, term_text, "#473960")
-                    term_badge.grid(row=0, column=badge_idx, padx=(0, 3))
-                    badge_idx += 1
-                
-                if info["std"]:
-                    std_bg = "#E6E6FA" if info["std"] == "FYJC" else "#FFE6E6"
-                    std_badge = self._create_badge(badges_frame, info["std"], std_bg, text_color="#333333")
-                    std_badge.grid(row=0, column=badge_idx, padx=(0, 3))
-                
-                # Open button - more compact
-                open_btn = ctk.CTkButton(row_frame, 
-                                       text="Open", 
-                                       width=60,  # Smaller button
-                                       height=24,
-                                       font=ctk.CTkFont(size=12, weight="bold"),
-                                       fg_color=self.colors["accent"],
-                                       hover_color=self.colors["accent_hover"],
-                                       corner_radius=8,
-                                       command=lambda p=file_path: webbrowser.open(f"file://{p}"))
-                open_btn.grid(row=0, column=3, padx=(5, 8), pady=6, sticky="e")
-                
-                # Create highlight effect on hover
-                def on_enter(e, frame=row_frame):
-                    frame.configure(fg_color=self.colors["file_hover"])
-                    
-                def on_leave(e, frame=row_frame):
-                    frame.configure(fg_color=self.colors["file_bg"])
-                    
-                row_frame.bind("<Enter>", on_enter)
-                row_frame.bind("<Leave>", on_leave)
-    
+                row_idx += 1
+
     def _parse_filename(self, filename):
         """Extract year, term and standard information from filename"""
         info = {
@@ -2046,67 +2126,83 @@ class ExportWordPage(ctk.CTkFrame):
         # Group files into compatible pairs and single files
         compatible_pairs = []
         single_files = []
-        file_ctimes = {f: os.path.getctime(os.path.join('excel_copies', f)) for f in excel_files}
+        file_infos = {f: self._parse_filename(f) for f in excel_files}
         
-        # First, try to find compatible pairs
-        for i, file1 in enumerate(excel_files):
-            if file1 in [pair['files'][0] for pair in compatible_pairs] or file1 in [pair['files'][1] for pair in compatible_pairs]:
+        # Helper for sorting: (year, term) -> tuple for sorting
+        def sort_key(info):
+            # year: '2023-2024' -> 2023, term: 'term2' > 'term1'
+            year = info.get('year', '')
+            try:
+                year_val = int(year.split('-')[0])
+            except:
+                year_val = 0
+            term = info.get('term', '')
+            term_val = 2 if term == 'term2' else 1
+            return (-year_val, -term_val)
+        
+        # Find compatible pairs
+        used = set()
+        sorted_files = sorted(excel_files, key=lambda f: sort_key(file_infos[f]))
+        for i, file1 in enumerate(sorted_files):
+            if file1 in used:
                 continue
-            file1_info = self._parse_filename(file1)
-            for file2 in excel_files[i+1:]:
-                if file2 in [pair['files'][0] for pair in compatible_pairs] or file2 in [pair['files'][1] for pair in compatible_pairs]:
+            info1 = file_infos[file1]
+            for file2 in sorted_files[i+1:]:
+                if file2 in used:
                     continue
-                file2_info = self._parse_filename(file2)
-                if self._are_files_compatible(file1_info, file2_info):
-                    # For sorting, use the latest ctime of the two files
-                    latest_ctime = max(file_ctimes[file1], file_ctimes[file2])
-                    # Also store year and term for output filename
-                    pair_info = {
-                        'files': (file1, file2),
-                        'latest_ctime': latest_ctime,
-                        'year': file1_info['year'],
-                        'term': file1_info['term']
-                    }
-                    compatible_pairs.append(pair_info)
+                info2 = file_infos[file2]
+                if self._are_files_compatible(info1, info2):
+                    # Always order FYJC first for consistency
+                    if info1['std'] == 'FYJC':
+                        compatible_pairs.append((file1, file2, info1))
+                    else:
+                        compatible_pairs.append((file2, file1, info2))
+                    used.add(file1)
+                    used.add(file2)
                     break
             else:
-                single_files.append(file1)
-        # Add remaining files to single files
-        for file in excel_files:
-            if file not in [pair['files'][0] for pair in compatible_pairs] and file not in [pair['files'][1] for pair in compatible_pairs]:
-                if file not in single_files:
-                    single_files.append(file)
-        # Sort compatible pairs by latest creation date (descending)
-        compatible_pairs.sort(key=lambda x: x['latest_ctime'], reverse=True)
+                if file1 not in used:
+                    single_files.append(file1)
+                    used.add(file1)
+        # Add any remaining files to single_files
+        for file in sorted_files:
+            if file not in used and file not in single_files:
+                single_files.append(file)
+        
         # Display compatible pairs first
         row_idx = 0
         if compatible_pairs:
+            # Add a section header for compatible pairs
             header_frame = ctk.CTkFrame(files_container, fg_color=self.colors["card_bg"], corner_radius=10)
             header_frame.grid(row=row_idx, column=0, sticky="ew", pady=(0, 10), padx=5)
+            
             ctk.CTkLabel(
                 header_frame,
                 text="✨ Compatible File Pairs",
                 font=ctk.CTkFont(size=16, weight="bold"),
                 text_color="#ffffff"
             ).pack(padx=15, pady=10)
+            
             row_idx += 1
-            for pair in compatible_pairs:
-                file1, file2 = pair['files']
-                year = pair['year']
-                term = pair['term']
-                # Output filename label (above the pair)
-                output_name = f"Combined file: {year}_{term}" if year and term else "Combined file"
-                output_label = ctk.CTkLabel(
-                    files_container,
-                    text=output_name,
-                    font=ctk.CTkFont(size=14, weight="bold"),
-                    text_color=self.colors["accent"]
-                )
-                output_label.grid(row=row_idx, column=0, sticky="w", padx=20, pady=(0, 0))
-                row_idx += 1
+            
+            # Add each compatible pair
+            for file1, file2, info in compatible_pairs:
+                # Output file name (combined)
+                combined_name = f"iso_excel_{info['year']}_{info['term']}.docx"
                 pair_frame = ctk.CTkFrame(files_container, fg_color=self.colors["file_bg"], corner_radius=10)
                 pair_frame.grid(row=row_idx, column=0, sticky="ew", pady=3, padx=5)
                 pair_frame.grid_columnconfigure(1, weight=1)
+                
+                # Combined file label
+                combined_label = ctk.CTkLabel(
+                    pair_frame,
+                    text=f"Combined file: {combined_name}",
+                    font=ctk.CTkFont(size=13, weight="bold"),
+                    text_color=self.colors["accent"]
+                )
+                combined_label.grid(row=0, column=0, columnspan=3, sticky="w", padx=10, pady=(8, 0))
+                
+                # Radio button for the pair
                 radio = ctk.CTkRadioButton(
                     pair_frame,
                     text="",
@@ -2119,40 +2215,53 @@ class ExportWordPage(ctk.CTkFrame):
                     hover_color=self.colors["accent_hover"],
                     border_color=self.colors["border"]
                 )
-                radio.grid(row=0, column=0, padx=(10, 5), pady=10)
+                radio.grid(row=1, column=0, padx=(10, 5), pady=10)
+                
+                # File pair info
                 info_frame = ctk.CTkFrame(pair_frame, fg_color="transparent")
-                info_frame.grid(row=0, column=1, sticky="ew", padx=5)
+                info_frame.grid(row=1, column=1, sticky="ew", padx=5)
                 info_frame.grid_columnconfigure(0, weight=1)
+                
+                # First file
                 file1_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
                 file1_frame.grid(row=0, column=0, sticky="ew", pady=2)
                 file1_frame.grid_columnconfigure(1, weight=1)
+                
                 ctk.CTkLabel(
                     file1_frame,
                     text="📄",
                     font=ctk.CTkFont(size=16)
                 ).grid(row=0, column=0, padx=(0, 10))
+                
                 ctk.CTkLabel(
                     file1_frame,
                     text=file1,
                     font=ctk.CTkFont(size=14),
                     text_color="#ffffff"
                 ).grid(row=0, column=1, sticky="w")
+                
+                # Second file
                 file2_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
                 file2_frame.grid(row=1, column=0, sticky="ew", pady=2)
                 file2_frame.grid_columnconfigure(1, weight=1)
+                
                 ctk.CTkLabel(
                     file2_frame,
                     text="📄",
                     font=ctk.CTkFont(size=16)
                 ).grid(row=0, column=0, padx=(0, 10))
+                
                 ctk.CTkLabel(
                     file2_frame,
                     text=file2,
                     font=ctk.CTkFont(size=14),
                     text_color="#ffffff"
                 ).grid(row=0, column=1, sticky="w")
+                
+                # Open buttons
                 open_frame = ctk.CTkFrame(pair_frame, fg_color="transparent")
-                open_frame.grid(row=0, column=2, padx=10, pady=10)
+                open_frame.grid(row=1, column=2, padx=10, pady=10)
+                
                 ctk.CTkButton(
                     open_frame,
                     text="Open Files",
@@ -2164,8 +2273,8 @@ class ExportWordPage(ctk.CTkFrame):
                     corner_radius=10,
                     text_color="#ffffff"
                 ).pack(pady=5)
+                
                 row_idx += 1
-        
         # Display single files
         if single_files:
             # Add a section header for single files
@@ -2254,19 +2363,61 @@ class ExportWordPage(ctk.CTkFrame):
                 info["year"] = part
                 break
         
-        # Extract term
+        # Extract term - look for exact term matching
         if "_term1" in filename:
             info["term"] = "term1"
         elif "_term2" in filename:
             info["term"] = "term2"
         
-        # Extract standard
+        # Extract standard - look for exact std matching
         if "_FYJC" in filename:
             info["std"] = "FYJC"
         elif "_SYJC" in filename:
             info["std"] = "SYJC"
         
         return info
+    
+    def _shorten_filename(self, filename):
+        """Create a shorter display version of the filename"""
+        # Remove the common prefix
+        if filename.startswith("iso_excel_"):
+            filename = filename[10:]
+        # Remove .xlsx extension
+        if filename.endswith(".xlsx"):
+            filename = filename[:-5]
+        return filename
+    
+    def _create_badge(self, parent, text, bg_color, text_color="#ffffff"):
+        """Create a small badge with metadata"""
+        badge = ctk.CTkFrame(parent, fg_color=bg_color, corner_radius=5)  # Smaller radius
+        
+        ctk.CTkLabel(
+            badge,
+            text=text,
+            font=ctk.CTkFont(size=10),  # Smaller font
+            text_color=text_color,
+            padx=4,  # Reduced padding
+            pady=0
+        ).pack(padx=2, pady=1)  # Reduced padding
+        
+        return badge
+    
+    def apply_filters(self, value=None):
+        """Apply filters to the file list"""
+        # Update display based on current filter values
+        self._display_filtered_files()
+    
+    def reset_filters(self):
+        """Reset all filters to default values"""
+        self.year_filter_var.set("All Years")
+        self.term_filter_var.set("All Terms")
+        self.std_filter_var.set("All Standards")
+        # Apply the reset filters
+        self._display_filtered_files()
+
+    def _validate_year(self, year):
+        import re
+        return re.match(r"^20\d{2}-20\d{2}$", year)
 
     def _are_files_compatible(self, file1_info, file2_info):
         """Check if two files are compatible for dual processing"""
